@@ -1,0 +1,75 @@
+{
+  "benchmark_sha256": {
+    "seed_42.jsonl": "d00fbeaa335f956c0f1259cde02349831ebc7ba280426a487fabbb271d798bdd",
+    "seed_43.jsonl": "4be6fb4b956abbf03100f7e76f13d4c5854b95d2693528b1dfe7ee2c4b78c073",
+    "seed_44.jsonl": "ae38621bb7a45cd1a41015a4fe04aa918343c6fbab77347dc5be80957d56bd0f",
+    "seed_45.jsonl": "3bb75690ba68b9bc7b0e8cc8f495392d41c5b142b972e73f536029a838f5441e",
+    "seed_46.jsonl": "71c590cfe70a094c9bd2af721c768b507001a6cc4c3779cf65a7018b9828ac25"
+  },
+  "benchmark_version": "0.1.0",
+  "config": {
+    "amount_tolerance": "0.10",
+    "candidates_per_case": 10,
+    "cases_per_scenario": 100,
+    "date_tolerance_days": 3,
+    "development_seed": 7,
+    "evaluation_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "methods": [
+      "M0",
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "M4-noNorm"
+    ],
+    "qgram_size": 3,
+    "scenarios": [
+      "P0_CLEAN",
+      "P1_AMOUNT_NOISE",
+      "P2_DATE_DRIFT",
+      "P3_REFERENCE_NOISE",
+      "P4_ENTITY_NOISE",
+      "P5_DESCRIPTION_NOISE",
+      "P6_MISSING_INFORMATION",
+      "P7_COMBINED"
+    ]
+  },
+  "created_at_utc": "2026-08-31T21:15:48.405619+00:00",
+  "dependencies": {
+    "matplotlib": "3.10.8",
+    "rapidfuzz": "3.14.3"
+  },
+  "effective_run": {
+    "cases_per_scenario": 100,
+    "methods": [
+      "M0",
+      "M1",
+      "M2",
+      "M3",
+      "M4",
+      "M4-noNorm"
+    ],
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ]
+  },
+  "git_commit": null,
+  "notes": [
+    "Ground truth, scenario and perturbation labels are excluded from scoring.",
+    "The uploaded real/example spreadsheet is not included in the project or benchmark.",
+    "Synthetic description templates are generic and contain no copied entity, reference or amount."
+  ],
+  "platform": "Linux-6.18.35-x86_64-with-glibc2.41",
+  "python": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+  "source_tree_sha256": "5a80bc493a59e942ee2d0436ffb6e3796d4cd39e5a6bee347f50f1528a32a74d"
+}
