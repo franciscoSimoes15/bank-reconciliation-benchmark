@@ -1,6 +1,6 @@
 import pytest
 
-from recon_benchmark.similarity import (
+from recon_benchmark.ranking.similarity import (
     jaro_winkler_similarity,
     qgram_cosine_similarity,
     qgram_counts,

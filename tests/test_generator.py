@@ -1,96 +1,188 @@
-from collections import Counter
+import random
+import re
+from collections import Counter, defaultdict
 
-from recon_benchmark.config import ExperimentConfig
-from recon_benchmark.generator import generate_benchmark, validate_benchmark
+from recon_benchmark.experiment.models import ExperimentConfig
+from recon_benchmark.generation.generator import generate_benchmark, validate_benchmark
+from recon_benchmark.domain.models import (
+    BankTransaction,
+    BenchmarkCase,
+    CandidateOrigin,
+    HardNegativeKind,
+    OperationType,
+    Scenario,
+)
+from recon_benchmark.normalization.fields import normalize_description
+from recon_benchmark.generation.synthetic_data import (
+    generate_financial_event,
+    render_accounting_record,
+    render_bank_transaction,
+)
 
 
-def test_generator_creates_expected_scenarios_and_candidate_count() -> None:
+def test_financial_event_has_two_independent_renderers() -> None:
+    events = tuple(
+        generate_financial_event(
+            random.Random(index),
+            seed=7,
+            index=index,
+            event_id=f"event-{index}",
+        )
+        for index in range(6)
+    )
+    assert {event.operation_type for event in events} == set(OperationType)
+    assert any(event.document_reference is None for event in events)
+    assert any(event.entity_legal_name is None for event in events)
+
+    for index, event in enumerate(events):
+        transaction = render_bank_transaction(
+            event,
+            random.Random(100 + index),
+            transaction_id=f"bank-{index}",
+        )
+        record = render_accounting_record(
+            event,
+            random.Random(200 + index),
+            record_id=f"record-{index}",
+        )
+        assert normalize_description(transaction.description) != normalize_description(
+            record.description
+        )
+        assert transaction.description != record.description
+
+
+def test_generator_creates_paired_scenarios_and_exact_candidate_composition() -> None:
     config = ExperimentConfig()
     cases = generate_benchmark(seed=7, cases_per_scenario=2, config=config)
     assert len(cases) == 16
-    assert Counter(case.scenario for case in cases) == {scenario: 2 for scenario in config.scenarios}
-    assert all(len(case.candidates) == 10 for case in cases)
+    assert Counter(case.scenario for case in cases) == {
+        scenario: 2 for scenario in config.scenarios
+    }
     assert not validate_benchmark(cases, config=config, expected_cases_per_scenario=2)
 
+    for case in cases:
+        origins = Counter(candidate.origin for candidate in case.candidates)
+        assert origins == {
+            CandidateOrigin.TRUE: 1,
+            CandidateOrigin.NATURAL_NEGATIVE: 6,
+            CandidateOrigin.CONTROLLED_HARD_NEGATIVE: 3,
+        }
+        assert {candidate.hard_negative_kind for candidate in case.candidates if candidate.origin is CandidateOrigin.CONTROLLED_HARD_NEGATIVE} == set(HardNegativeKind)
+        assert all(
+            candidate.source_event_id != case.event_id
+            for candidate in case.candidates
+            if candidate.origin is CandidateOrigin.NATURAL_NEGATIVE
+        )
 
-def test_generator_is_reproducible() -> None:
+
+def test_same_event_and_candidate_set_are_reused_across_scenarios() -> None:
+    cases = generate_benchmark(seed=7, cases_per_scenario=3, config=ExperimentConfig())
+    grouped: dict[str, list[BenchmarkCase]] = defaultdict(list)
+    for case in cases:
+        grouped[case.event_id].append(case)
+
+    for paired in grouped.values():
+        first = paired[0]
+        assert {case.scenario for case in paired} == set(Scenario)
+        assert all(case.candidates is first.candidates for case in paired)
+        assert all(case.true_candidate_id == first.true_candidate_id for case in paired)
+
+
+def test_every_declared_perturbation_changes_its_field() -> None:
+    cases = generate_benchmark(seed=7, cases_per_scenario=12, config=ExperimentConfig())
+    grouped: dict[str, list[BenchmarkCase]] = defaultdict(list)
+    for case in cases:
+        grouped[case.event_id].append(case)
+
+    family_to_field = {
+        "amount": "amount",
+        "date": "date",
+        "reference": "reference",
+        "entity": "counterparty",
+        "description": "description",
+    }
+    for paired in grouped.values():
+        baseline = next(
+            case for case in paired if case.scenario is Scenario.NATURAL_VARIATION
+        )
+        baseline_fields = _transaction_fields(baseline.transaction)
+        assert baseline.perturbations == ()
+        for case in paired:
+            if case.scenario is Scenario.NATURAL_VARIATION:
+                continue
+            changed_fields = {
+                name
+                for name, value in _transaction_fields(case.transaction).items()
+                if value != baseline_fields[name]
+            }
+            if case.scenario is Scenario.MISSING_INFORMATION:
+                expected = {case.perturbations[0].split(":", 1)[1]}
+                expected = {"counterparty" if item == "counterparty" else item for item in expected}
+            else:
+                expected = {
+                    family_to_field[tag.split(":", 1)[0]]
+                    for tag in case.perturbations
+                }
+            assert changed_fields == expected
+            assert len(case.perturbations) == (
+                3 if case.scenario is Scenario.COMBINED_VARIATION else 1
+            )
+
+
+def test_generator_is_reproducible_and_seed_sensitive() -> None:
     config = ExperimentConfig()
-    first = generate_benchmark(seed=7, cases_per_scenario=1, config=config)
-    second = generate_benchmark(seed=7, cases_per_scenario=1, config=config)
-    assert [case.to_dict() for case in first] == [case.to_dict() for case in second]
+    first = generate_benchmark(seed=7, cases_per_scenario=2, config=config)
+    repeated = generate_benchmark(seed=7, cases_per_scenario=2, config=config)
+    different = generate_benchmark(seed=8, cases_per_scenario=2, config=config)
+    assert [case.to_dict() for case in first] == [case.to_dict() for case in repeated]
+    assert [case.to_dict() for case in first] != [case.to_dict() for case in different]
 
 
-def test_different_seeds_produce_different_cases() -> None:
-    config = ExperimentConfig()
-    first = generate_benchmark(seed=7, cases_per_scenario=1, config=config)
-    second = generate_benchmark(seed=8, cases_per_scenario=1, config=config)
-    assert [case.to_dict() for case in first] != [case.to_dict() for case in second]
+def test_candidate_ids_are_opaque_and_do_not_encode_origin() -> None:
+    cases = generate_benchmark(seed=7, cases_per_scenario=1, config=ExperimentConfig())
+    case = cases[0]
+    candidate_ids = [candidate.record.id for candidate in case.candidates]
+    assert all(re.fullmatch(r"cand_[0-9a-f]{20}", candidate_id) for candidate_id in candidate_ids)
+    assert all(
+        marker not in candidate_id.lower()
+        for candidate_id in candidate_ids
+        for marker in ("true", "natural", "hard", "negative")
+    )
+    assert case.true_candidate_id in candidate_ids
+    assert case.true_candidate_id != case.transaction.id
+    assert case.true_candidate_id not in case.case_id
 
 
-def test_isolated_scenarios_change_only_expected_transaction_fields() -> None:
-    config = ExperimentConfig()
-    cases = generate_benchmark(seed=7, cases_per_scenario=1, config=config)
-    by_scenario = {case.scenario: case for case in cases}
+def test_controlled_hard_negatives_guarantee_declared_conflicts() -> None:
+    case = generate_benchmark(seed=7, cases_per_scenario=1, config=ExperimentConfig())[0]
+    true_record = case.true_candidate()
+    hard = {
+        candidate.hard_negative_kind: candidate.record
+        for candidate in case.candidates
+        if candidate.origin is CandidateOrigin.CONTROLLED_HARD_NEGATIVE
+    }
 
-    amount = by_scenario["P1_AMOUNT_NOISE"]
-    amount_true = amount.true_candidate()
-    assert amount.transaction.amount != amount_true.amount
-    assert amount.transaction.date == amount_true.date
-    assert amount.transaction.reference == amount_true.reference
-    assert amount.transaction.counterparty == amount_true.entity
-    assert amount.transaction.description == amount_true.description
+    amount_date = hard[HardNegativeKind.AMOUNT_DATE_NEAR_REFERENCE]
+    assert amount_date.amount == true_record.amount
+    assert amount_date.date == true_record.date
+    assert amount_date.reference != true_record.reference
 
-    date = by_scenario["P2_DATE_DRIFT"]
-    date_true = date.true_candidate()
-    assert date.transaction.date != date_true.date
-    assert date.transaction.amount == date_true.amount
+    same_entity = hard[HardNegativeKind.SAME_ENTITY_OTHER_DOCUMENT]
+    assert same_entity.amount == true_record.amount
+    assert same_entity.entity == true_record.entity
+    assert same_entity.reference != true_record.reference
 
-    reference = by_scenario["P3_REFERENCE_NOISE"]
-    reference_true = reference.true_candidate()
-    assert reference.transaction.reference != reference_true.reference
-    assert reference.transaction.amount == reference_true.amount
-    assert reference.transaction.date == reference_true.date
-
-    entity = by_scenario["P4_ENTITY_NOISE"]
-    entity_true = entity.true_candidate()
-    assert entity.transaction.counterparty != entity_true.entity
-    assert entity.transaction.reference == entity_true.reference
-
-    description = by_scenario["P5_DESCRIPTION_NOISE"]
-    description_true = description.true_candidate()
-    assert description.transaction.description != description_true.description
-    assert description.transaction.counterparty == description_true.entity
+    multi_field = hard[HardNegativeKind.MULTI_FIELD_CHALLENGER]
+    assert multi_field.amount == true_record.amount
+    assert multi_field.entity == true_record.entity
+    assert abs((multi_field.date - true_record.date).days) == 1
 
 
-def test_missing_scenario_alternates_reference_and_counterparty() -> None:
-    config = ExperimentConfig()
-    cases = generate_benchmark(seed=7, cases_per_scenario=2, config=config)
-    missing = [case for case in cases if case.scenario == "P6_MISSING_INFORMATION"]
-    assert missing[0].transaction.reference is None
-    assert missing[0].transaction.counterparty is not None
-    assert missing[1].transaction.counterparty is None
-    assert missing[1].transaction.reference is not None
-
-
-def test_combined_applies_three_distinct_families() -> None:
-    config = ExperimentConfig()
-    cases = generate_benchmark(seed=7, cases_per_scenario=1, config=config)
-    combined = next(case for case in cases if case.scenario == "P7_COMBINED")
-    families = {tag.split(":", 1)[0] for tag in combined.perturbations}
-    assert len(families) == 3
-
-
-def test_scenario_aware_n9_competes_with_observed_amount_and_date() -> None:
-    config = ExperimentConfig()
-    cases = generate_benchmark(seed=7, cases_per_scenario=1, config=config)
-    by_scenario = {case.scenario: case for case in cases}
-
-    amount_case = by_scenario["P1_AMOUNT_NOISE"]
-    amount_n9 = next(candidate for candidate in amount_case.candidates if candidate.id.endswith("-N9"))
-    assert amount_n9.amount == amount_case.transaction.amount
-    assert amount_n9.reference != amount_case.true_candidate().reference
-
-    date_case = by_scenario["P2_DATE_DRIFT"]
-    date_n9 = next(candidate for candidate in date_case.candidates if candidate.id.endswith("-N9"))
-    assert date_n9.date == date_case.transaction.date
-    assert date_n9.reference != date_case.true_candidate().reference
+def _transaction_fields(transaction: BankTransaction) -> dict[str, object]:
+    return {
+        "amount": transaction.amount,
+        "date": transaction.date,
+        "reference": transaction.reference,
+        "counterparty": transaction.counterparty,
+        "description": transaction.description,
+    }

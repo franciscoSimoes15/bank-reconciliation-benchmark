@@ -1,4 +1,4 @@
-"""Gera duas explicações: um caso resolvido e um caso difícil/falhado."""
+"""Gera explicações de um caso resolvido e do caso mais difícil da amostra."""
 
 from __future__ import annotations
 
@@ -10,10 +10,12 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from recon_benchmark.config import load_config  # noqa: E402
-from recon_benchmark.explanation import write_case_explanation  # noqa: E402
-from recon_benchmark.generator import generate_benchmark  # noqa: E402
-from recon_benchmark.serialization import write_jsonl  # noqa: E402
+from recon_benchmark.experiment.config import load_config  # noqa: E402
+from recon_benchmark.metrics.evaluation import evaluate_case  # noqa: E402
+from recon_benchmark.cli.explanation import write_case_explanation  # noqa: E402
+from recon_benchmark.generation.generator import generate_benchmark  # noqa: E402
+from recon_benchmark.domain.models import MatchingMethod, Scenario  # noqa: E402
+from recon_benchmark.storage.serialization import write_jsonl  # noqa: E402
 
 
 if __name__ == "__main__":
@@ -21,22 +23,39 @@ if __name__ == "__main__":
     cases = generate_benchmark(seed=config.development_seed, cases_per_scenario=1, config=config)
     benchmark_path = write_jsonl(cases, ROOT / "examples" / "demo_benchmark.jsonl")
 
-    success_case = next(case for case in cases if case.scenario == "P3_REFERENCE_NOISE")
-    challenging_case = next(case for case in cases if case.scenario == "P7_COMBINED")
+    evaluations = {
+        case.case_id: evaluate_case(
+            case,
+            method=MatchingMethod.FIELD_AWARE,
+            config=config,
+        )
+        for case in cases
+    }
+    success_case = next(
+        (case for case in cases if evaluations[case.case_id].unique_top1 == 1),
+        next(case for case in cases if case.scenario is Scenario.NATURAL_VARIATION),
+    )
+    challenging_case = max(
+        cases,
+        key=lambda case: (
+            evaluations[case.case_id].true_rank,
+            case.scenario is Scenario.COMBINED_VARIATION,
+        ),
+    )
 
     success_path = write_case_explanation(
         success_case,
-        method="M4",
+        method=MatchingMethod.FIELD_AWARE,
         config=config,
         output=ROOT / "examples" / "demo_success.md",
     )
     challenging_path = write_case_explanation(
         challenging_case,
-        method="M4",
+        method=MatchingMethod.FIELD_AWARE,
         config=config,
         output=ROOT / "examples" / "demo_challenging.md",
     )
 
     print(f"Benchmark de demonstração: {benchmark_path}")
     print(f"Caso resolvido: {success_path}")
-    print(f"Caso difícil/falhado: {challenging_path}")
+    print(f"Caso mais difícil da amostra: {challenging_path}")

@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Iterable
 
-from recon_benchmark.models import BenchmarkCase
+from recon_benchmark.domain.models import BenchmarkCase
 
 
 def write_jsonl(cases: Iterable[BenchmarkCase], path: str | Path) -> Path:

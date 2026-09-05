@@ -1,141 +1,70 @@
 # Walkthrough do fluxo completo
 
-Este documento explica o que acontece quando se executa:
+Exemplo:
 
 ```bash
-python -m recon_benchmark.cli demo --scenario P7_COMBINED --method M4
+python -m recon_benchmark.cli demo --scenario combined_variation --method field_aware
 ```
 
-## Passo 1 — Criar o registo contabilístico canónico
+## 1. Acontecimento latente
 
-O gerador cria um objeto fictício:
+O gerador cria um `FinancialEvent` com tipo de operação, data, montante e apenas os campos aplicáveis. O objeto e o `event_id` pertencem à geração; não atravessam a fronteira do matcher.
+
+## 2. Duas representações independentes
+
+O mesmo evento é passado separadamente a:
 
 ```text
-AccountingRecord
-  id
-  date
-  signed amount
-  reference
-  entity
-  description
+render_bank_transaction(event, bank_rng)
+render_accounting_record(event, accounting_rng)
 ```
 
-A entidade e a referência são totalmente sintéticas. A descrição é criada através de um template bancário genérico.
+Os renderers usam convenções e templates diferentes. Portanto, o cenário P0 já contém variação natural, sem copiar descrição, referência formatada ou nome da entidade de um lado para o outro.
 
-## Passo 2 — Derivar o movimento bancário
+## 3. Ledger e candidatos
 
-Inicialmente, o `BankTransaction` contém os mesmos cinco sinais do registo correto:
+Primeiro é renderizado um ledger contabilístico. Para cada caso são escolhidos:
 
 ```text
-AccountingRecord.entity      → BankTransaction.counterparty
-AccountingRecord.reference   → BankTransaction.reference
-AccountingRecord.description → BankTransaction.description
+1 true candidate
+6 natural negatives de outros FinancialEvent do ledger
+3 controlled hard negatives
 ```
 
-Nesse momento o par é perfeito e constitui o ground truth.
+Os negativos controlados cobrem amount+date com referência conflitante, mesma entidade+amount com outro documento e um concorrente plausível em múltiplas evidências. Nos tipos sem referência, a dificuldade usa apenas os campos naturalmente disponíveis.
 
-## Passo 3 — Aplicar ruído apenas ao lado bancário
+Os dez candidatos recebem IDs opacos, são baralhados com `random.Random` e ficam congelados para o evento.
 
-No cenário `P7_COMBINED`, o gerador escolhe três famílias distintas entre:
+## 4. Cenários emparelhados
+
+O mesmo movimento bancário natural e o mesmo candidate set originam P0–P7. Apenas o movimento observado recebe a perturbação experimental. Cada alteração é comparada com o valor anterior e um no-op lança `PerturbationNoOpError`.
+
+## 5. Matching
+
+O matcher recebe apenas um `BankTransaction`, um `AccountingRecord`, o método e a configuração. Não recebe origem, cenário, perturbações, `event_id` nem `true_candidate_id`.
+
+M0 faz igualdade normalizada. M1 usa regras binárias tolerantes. M2–M4 usam proximidade gradual para amount/date; M4 compara a referência por componentes e aplica métricas textuais por campo.
+
+## 6. Missing
+
+Um campo ausente em qualquer lado é excluído:
 
 ```text
-amount
-date
-reference
-entity
-description
+score = soma das compatibilidades / campos comparados
 ```
 
-O AccountingRecord correto não é alterado.
+O padrão de disponibilidade dos candidatos é igual dentro de cada caso. A avaliação confirma que todos tiveram o mesmo `compared_field_count`.
 
-Isso simula a situação em que o ERP mantém um registo canónico, enquanto o banco comunica a mesma operação com diferenças de formato, timing ou texto.
+## 7. Ranking e avaliação
 
-## Passo 4 — Criar nove hard negatives
+Depois de todos os scores:
 
-Os falsos candidatos não são aleatórios. Cada um preserva evidências diferentes:
+- Unique Top-1 vale 1 apenas se o verdadeiro estiver sozinho no máximo;
+- MRR usa o average rank quando há empate;
+- Tie Rate assinala múltiplos candidatos no maior score.
 
-```text
-N1  mesmo amount
-N2  mesma date
-N3  reference próxima
-N4  mesma entity
-N5  mesmo amount + date próxima
-N6  mesmo amount + entity
-N7  mesmo amount + date + reference próxima
-N8  description semelhante + entity
-N9  mesmo amount + date + entity; reference errada mas próxima
-```
+Só nesta fase o avaliador consulta o ground truth.
 
-O candidato correto e os nove negativos são baralhados deterministicamente.
+## 8. Outputs
 
-## Passo 5 — Normalizar
-
-A normalização é distinta por tipo de campo.
-
-### Reference
-
-```text
-FT-2026 / 00187 → ft202600187
-```
-
-### Entity
-
-```text
-ÓRBITA SERVIÇOS LDA → orbita servicos
-```
-
-### Description
-
-```text
-TRF P/ ÓRBITA SERVIÇOS, LDA. → trf p orbita servicos lda
-```
-
-M4-noNorm salta esta fase nos campos textuais, permitindo medir a contribuição do preprocessing.
-
-## Passo 6 — Calcular score por campo
-
-No M4:
-
-```text
-Amount      → tolerância de ±0,10 €
-Date        → tolerância de ±3 dias
-Reference   → Jaro-Winkler
-Entity      → Jaro-Winkler
-Description → character 3-gram cosine
-```
-
-Cada score fica entre `0` e `1`.
-
-## Passo 7 — Tratar missing
-
-Quando `reference` ou `counterparty` está ausente, o campo é excluído:
-
-```text
-score = soma dos scores disponíveis / número de campos disponíveis
-```
-
-Missing não significa mismatch.
-
-## Passo 8 — Ordenar candidatos
-
-Todos os candidatos são ordenados por score decrescente. O ID só serve como desempate visual estável; não altera o average rank usado nas métricas.
-
-## Passo 9 — Avaliar
-
-Só depois do ranking é consultado o `true_candidate_id`.
-
-- **Unique Top-1:** 1 apenas se o verdadeiro for o único candidato com score máximo.
-- **MRR:** `1 / average rank` do verdadeiro.
-- **Tie Rate:** indica se mais de um candidato ficou no topo.
-
-## Passo 10 — Produzir outputs
-
-O pipeline final escreve:
-
-- benchmark reproduzível;
-- resultados por caso;
-- agregação por cenário e seed;
-- média/desvio-padrão entre seeds;
-- manifest com configuração e hashes;
-- relatório Markdown;
-- figura PNG.
+O pipeline escreve o benchmark consolidado, resultados por caso, agregados por seed/cenário, média e desvio-padrão entre seeds, relatório, figura e manifest com configuração, ambiente, commit e hashes.

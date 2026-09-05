@@ -1,40 +1,30 @@
 # Resultados do benchmark
 
+Os valores são médias entre evaluation seeds; o desvio-padrão amostral está em `summary.csv`.
+
 ## Resumo global
 
-| Método | Unique Top-1 | MRR | Tie rate |
-|---|---:|---:|---:|
-| M0 | 31.35% | 0.7517 | 57.55% |
-| M1 | 59.03% | 0.8568 | 37.28% |
-| M2 | 66.20% | 0.8444 | 8.03% |
-| M3 | 71.05% | 0.8687 | 8.05% |
-| M4 | 73.42% | 0.8805 | 8.00% |
-| M4-noNorm | 70.40% | 0.8622 | 6.35% |
+| Método | Código | Unique Top-1 | MRR | Tie Rate |
+|---|---|---:|---:|---:|
+| `normalized_exact` | M0 | 49.43% | 0.7519 | 47.23% |
+| `tolerant_deterministic` | M1 | 53.87% | 0.7656 | 45.12% |
+| `jaro_winkler_text` | M2 | 62.18% | 0.7983 | 1.38% |
+| `character_trigram_text` | M3 | 75.90% | 0.8658 | 1.20% |
+| `field_aware` | M4 | 79.80% | 0.8850 | 1.23% |
+| `field_aware_without_description` | M4-D | 74.95% | 0.8887 | 14.17% |
 
 ## Unique Top-1 por cenário
 
-| Método | P0_CLEAN | P1_AMOUNT_NOISE | P2_DATE_DRIFT | P3_REFERENCE_NOISE | P4_ENTITY_NOISE | P5_DESCRIPTION_NOISE | P6_MISSING_INFORMATION | P7_COMBINED |
+| Método | P0 | P1 | P2 | P3 | P4 | P5 | P6 | P7 |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| M0 | 100.00% | 0.00% | 0.00% | 50.80% | 37.20% | 12.80% | 50.00% | 0.00% |
-| M1 | 100.00% | 100.00% | 100.00% | 50.80% | 37.20% | 12.80% | 50.00% | 21.40% |
-| M2 | 100.00% | 100.00% | 100.00% | 56.00% | 58.40% | 20.60% | 50.00% | 44.60% |
-| M3 | 100.00% | 100.00% | 100.00% | 50.80% | 40.00% | 69.40% | 50.00% | 58.20% |
-| M4 | 100.00% | 100.00% | 100.00% | 94.60% | 87.20% | 14.00% | 50.00% | 41.60% |
+| M0 | 59.00% | 57.20% | 60.00% | 29.60% | 59.00% | 59.00% | 30.00% | 41.60% |
+| M1 | 66.40% | 66.40% | 58.80% | 33.80% | 66.40% | 66.40% | 33.20% | 39.60% |
+| M2 | 68.40% | 68.40% | 45.60% | 69.00% | 68.40% | 70.20% | 52.40% | 55.00% |
+| M3 | 81.80% | 81.80% | 66.00% | 80.20% | 81.80% | 82.60% | 62.80% | 70.20% |
+| M4 | 84.40% | 84.40% | 77.80% | 78.00% | 84.40% | 87.40% | 67.00% | 75.00% |
 
-## Leituras automáticas
+## Interpretação
 
-- Melhor resultado global entre M0–M4: **M4**, com **73.42%** de Unique Top-1 e MRR **0.8805**.
-- `P0_CLEAN`: melhor resultado de **M0, M1, M2, M3, M4** (100.00%).
-- `P1_AMOUNT_NOISE`: melhor resultado de **M1, M2, M3, M4** (100.00%).
-- `P2_DATE_DRIFT`: melhor resultado de **M1, M2, M3, M4** (100.00%).
-- `P3_REFERENCE_NOISE`: melhor resultado de **M4** (94.60%).
-- `P4_ENTITY_NOISE`: melhor resultado de **M4** (87.20%).
-- `P5_DESCRIPTION_NOISE`: melhor resultado de **M3** (69.40%).
-- `P6_MISSING_INFORMATION`: melhor resultado de **M0, M1, M2, M3, M4** (50.00%).
-- `P7_COMBINED`: melhor resultado de **M3** (58.20%).
-- A normalização aumentou o Unique Top-1 global do M4 em **3.02 pontos percentuais**; o efeito deve continuar a ser analisado por cenário, porque não é necessariamente uniforme.
-- `P6_MISSING_INFORMATION` contém deliberadamente casos observacionalmente indistinguíveis; 100% não é um objetivo possível nesse cenário.
+Unique Top-1 exige que o candidato verdadeiro seja o único no maior score. MRR usa a posição média nos empates e Tie Rate mede a proporção de casos com mais de um candidato no maior score.
 
-## Leitura correta
-
-Estes resultados medem robustez relativa num benchmark sintético controlado de matching 1:1. Não demonstram desempenho em produção, superioridade sobre produtos comerciais, nem validade para 1:N/N:N.
+O benchmark mede ranking sintético 1:1 quando o candidato verdadeiro está presente. Não mede auto-reconciliação, calibração, relações 1:N/N:1/N:N nem desempenho em produção.

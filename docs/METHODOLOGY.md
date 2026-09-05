@@ -64,7 +64,7 @@ Por isso o projeto compara:
 
 ## 6. Métricas de ranking
 
-MRR é usado quando interessa a posição do primeiro resultado correto. Para cada caso:
+MRR é usado quando interessa a posição do primeiro resultado correto. Como existe exatamente um verdadeiro, a posição usa o average rank quando há empate:
 
 ```text
 RR = 1 / posição do candidato correto
@@ -91,8 +91,20 @@ Não vem diretamente de um paper:
 - 10 candidatos por caso;
 - ±0,10 €;
 - ±3 dias;
-- 9 hard negatives concretos;
-- equal weighting;
+- 6 natural negatives de outros eventos e 3 controlled hard negatives;
+- média simples dos campos disponíveis, com disponibilidade igual dentro do caso;
 - entity/legal suffix list limitada a `LDA` e `SA`.
 
 Estas decisões são parâmetros do protocolo, congelados antes de observar os resultados finais. Não são apresentadas como valores universais para reconciliação bancária.
+
+## 9. Separação entre geração e matching
+
+O `FinancialEvent` latente gera independentemente uma vista bancária e uma vista contabilística. O matcher nunca recebe esse evento, o ground truth, o cenário, as perturbações ou a origem do candidato. Assim, os resultados medem apenas a compatibilidade entre campos observáveis.
+
+Os mesmos eventos e candidate sets são reutilizados nos oito cenários. A comparação entre cenários é, por isso, emparelhada e não mistura amostras diferentes.
+
+## 10. Proximidade e missing
+
+M2–M4 usam proximidade gradual para amount/date, ao contrário da regra binária tolerante de M1. M4 trata a referência como estrutura prefixo/ano/número quando possível e usa Jaro-Winkler apenas como fallback.
+
+Missing exclui o campo da agregação, não acrescenta um desacordo. O benchmark preserva a disponibilidade entre candidatos e valida explicitamente o número de campos comparados.

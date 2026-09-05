@@ -49,17 +49,17 @@ Também aparecem características relevantes para reconhecimento de padrões:
 
 ## Como estas observações entram no gerador
 
-O projeto cria templates **genéricos e fictícios**, por exemplo:
+O projeto usa apenas famílias semânticas genéricas e cria templates bancários e contabilísticos independentes, por exemplo:
 
 ```text
-TRF P/ <ENTIDADE_FICTICIA> REF <REFERENCIA_FICTICIA>
-TRF DE <ENTIDADE_FICTICIA> REF <REFERENCIA_FICTICIA>
-MDB<IDENTIFICADOR_FICTICIO> <ENTIDADE_FICTICIA> REF <REFERENCIA_FICTICIA>
-DD <ENTIDADE_FICTICIA> MANDATO <REFERENCIA_FICTICIA>
-COM.MAN.CONTA PACOTE EMPRESA <PERIODO> REF <REFERENCIA_FICTICIA>
-IMP. SELO COM. TRANSFERENCIA REF <REFERENCIA_FICTICIA>
-PAGAMENTO EMPRESTIMO N. <IDENTIFICADOR_FICTICIO>
+BankTransaction:  TRF SEPA EMITIDA CANAL EMPRESAS
+AccountingRecord: Liquidacao de compra a fornecedor
+
+BankTransaction:  DEBITO DIRETO SEPA AUTORIZADO
+AccountingRecord: Pagamento recorrente contabilizado
 ```
+
+Reference e entity são campos próprios e não são repetidos sistematicamente na description. Isto impede que a média conte a mesma evidência duas vezes. A presença desses campos depende do tipo de operação.
 
 O montante é convertido para um único campo assinado:
 

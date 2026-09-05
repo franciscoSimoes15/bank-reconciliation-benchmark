@@ -1,279 +1,218 @@
-# Bank Reconciliation Pattern-Matching Benchmark
+# Bank Reconciliation Ranking Benchmark
 
-Projeto Python executável de ponta a ponta para estudar **reconciliação bancária 1:1 como problema de reconhecimento de padrões e ranking de candidatos**.
+Benchmark Python sintético e reproduzível para comparar métodos transparentes de ranking 1:1 em reconciliação bancária. O candidato verdadeiro está sempre presente; o projeto não usa dados bancários reais, ML, embeddings, LLMs nem pesos aprendidos.
 
-O projeto não usa dados bancários reais. Gera pares sintéticos com ground truth conhecido, introduz ruído controlado, cria candidatos falsos difíceis, executa cinco estratégias de matching e produz métricas, tabelas, um relatório e uma figura.
-
-## O que este projeto permite perceber
+## Fluxo
 
 ```text
-Registo contabilístico canónico
-        ↓
-Movimento bancário derivado
-        ↓
-Perturbação controlada
-        ↓
-1 candidato correto + 9 hard negatives
-        ↓
-Normalização por campo
-        ↓
-M0 / M1 / M2 / M3 / M4
-        ↓
-Ranking dos 10 candidatos
-        ↓
-Unique Top-1 / MRR / Tie Rate
+FinancialEvent latente
+├── render_bank_transaction()
+└── render_accounting_record()
+          ↓
+ledger contabilístico independente
+          ↓
+1 true + 6 natural negatives + 3 controlled hard negatives
+          ↓
+mesmo candidate set em 8 cenários emparelhados
+          ↓
+matching apenas com BankTransaction + AccountingRecord
+          ↓
+Unique Top-1 / MRR com average rank / Tie Rate
 ```
 
-A demonstração `demo` mostra este fluxo campo a campo, incluindo os scores de cada candidato.
+`BankTransaction` e `AccountingRecord` são renderizações independentes do mesmo acontecimento. Nenhuma é copiada ou derivada da outra. Os seus templates começam de forma diferente e as descrições não repetem sistematicamente referência ou entidade.
 
-## Relação com o Excel fornecido
+O gerador inclui pelo menos estes tipos de operação:
 
-O ficheiro de exemplo foi usado **apenas para observar formas estruturais comuns em descrições bancárias portuguesas**, como abreviações de transferências, compras com cartão, débitos diretos, comissões, imposto do selo, identificadores embebidos, truncation e diferenças entre data e data-valor.
+- supplier transfer;
+- customer receipt;
+- direct debit;
+- card payment;
+- bank fee;
+- tax payment.
 
-Não foi usado para:
+Referência e entidade são opcionais conforme o tipo; não são preenchidas artificialmente em todos os eventos.
 
-- gerar ground truth;
-- treinar qualquer modelo;
-- copiar nomes, montantes, referências ou movimentos;
-- avaliar os algoritmos;
-- integrar dados reais no repositório.
+## Métodos
 
-Os templates do gerador usam apenas entidades e referências fictícias. Ver [`docs/EXAMPLE_SPREADSHEET_OBSERVATIONS.md`](docs/EXAMPLE_SPREADSHEET_OBSERVATIONS.md).
+Os nomes usados pelo código são membros de `MatchingMethod` (`StrEnum`). M0–M4 são apenas códigos de output.
 
-## Métodos implementados
+| Código | Nome | Amount / date | Campos textuais |
+|---|---|---|---|
+| M0 | `normalized_exact` | igualdade | igualdade após normalização |
+| M1 | `tolerant_deterministic` | regras binárias de ±0,10 € / ±3 dias | igualdade após normalização |
+| M2 | `jaro_winkler_text` | proximidade gradual | Jaro-Winkler |
+| M3 | `character_trigram_text` | proximidade gradual | cosine sobre character trigrams |
+| M4 | `field_aware` | proximidade gradual | referência estruturada, Jaro-Winkler para entidade e trigrams para descrição |
+| M4-D | `field_aware_without_description` | igual a M4 | ablation sem descrição |
 
-| Método | Amount / Date | Reference | Entity | Description |
-|---|---|---|---|---|
-| **M0 Normalized Exact** | igualdade exata | exato | exato | exato |
-| **M1 Tolerant Deterministic** | ±0,10 € / ±3 dias | exato | exato | exato |
-| **M2 Jaro-Winkler** | tolerante | Jaro-Winkler | Jaro-Winkler | Jaro-Winkler |
-| **M3 Character 3-gram** | tolerante | 3-gram cosine | 3-gram cosine | 3-gram cosine |
-| **M4 Field-Aware Hybrid** | tolerante | Jaro-Winkler | Jaro-Winkler | 3-gram cosine |
-| **M4-noNorm** | igual ao M4 | raw | raw | raw |
-
-Todos os campos disponíveis têm peso igual. Um campo ausente é excluído do numerador e do denominador; não é tratado automaticamente como desacordo.
-
-## Requisitos
-
-- Python 3.11+
-- `pip`
+Os scores são compatibilidades em `[0,1]`, não probabilidades. A agregação é uma média simples dos campos disponíveis, sem pesos aprendidos.
 
 ## Instalação
 
-### Windows PowerShell
+Requer Python 3.11+.
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements-lock.txt
-pip install -e .
+python -m pip install -r requirements-lock.txt
+python -m pip install "setuptools>=75" wheel
+python -m pip install -e . --no-build-isolation
 ```
 
-### Linux / macOS
+## Testes
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements-lock.txt
-pip install -e .
+```powershell
+python -m pytest
 ```
 
-### Instalação sem build isolation (ambientes restritos)
+Os testes cobrem renderização independente, determinismo, perturbações sem no-op, emparelhamento, composição 1+6+3, IDs opacos, missing, scores, métricas, anti-leakage e outputs ponta a ponta.
 
-Se o ambiente já tiver `setuptools` instalado mas bloquear downloads durante o build:
+## Desenvolvimento
 
-```bash
-pip install -e . --no-build-isolation
+Gerar e validar uma amostra:
+
+```powershell
+python -m recon_benchmark.cli generate --seed 7 --cases-per-scenario 3 --output benchmarks/seed_7.jsonl
+python -m recon_benchmark.cli validate --input benchmarks/seed_7.jsonl --cases-per-scenario 3
 ```
 
-## 1. Executar testes
+Executar a seed de desenvolvimento:
 
-```bash
-pytest
+```powershell
+python -m recon_benchmark.cli evaluate --seed 7 --cases-per-scenario 3 --methods all --output-root development_run
 ```
 
-## 2. Ver o fluxo completo num único caso
+Criar uma explicação de um caso:
 
-```bash
-python start_here.py
+```powershell
+python -m recon_benchmark.cli demo --scenario combined_variation --method field_aware
 ```
 
-Equivalente com o CLI instalado:
+Também é possível executar `python start_here.py`.
 
-```bash
-python -m recon_benchmark.cli demo
-```
+## Execução final congelada
 
-Outputs:
-
-- `examples/demo_benchmark.jsonl`
-- `examples/demo_success.md`
-- `examples/demo_challenging.md`
-
-Abrir os dois relatórios para comparar um caso resolvido com um caso difícil em que o método falha. Ambos mostram:
-
-- movimento bancário raw e normalizado;
-- perturbações aplicadas;
-- os 10 candidatos;
-- score por campo;
-- ranking final;
-- candidato correto, usado apenas na avaliação.
-
-Também existem scripts diretos:
-
-```bash
-./scripts/run_demo.sh
-```
-
-ou, em Windows:
-
-```bat
-scripts\run_demo.bat
-```
-
-## 3. Smoke run de desenvolvimento
-
-```bash
-python -m recon_benchmark.cli evaluate \
-  --seed 7 \
-  --cases-per-scenario 3 \
-  --methods all \
-  --output-root development_run
-```
-
-Isto executa 24 casos: 8 cenários × 3 casos.
-
-## 4. Gerar e validar um benchmark
-
-```bash
-python -m recon_benchmark.cli generate \
-  --seed 7 \
-  --cases-per-scenario 3 \
-  --output benchmarks/seed_7.jsonl
-
-python -m recon_benchmark.cli validate \
-  --input benchmarks/seed_7.jsonl \
-  --cases-per-scenario 3
-```
-
-## 5. Executar o protocolo final
-
-```bash
+```powershell
 python -m recon_benchmark.cli run-final
 ```
 
-A configuração congelada usa:
+`run-final` não aceita overrides de seeds, tamanho ou métodos. Usa a configuração registada em `config/experiment.json`:
 
-- seeds `42, 43, 44, 45, 46`;
-- 100 casos por cenário;
-- 8 cenários;
-- 4 000 casos no total;
-- 10 candidatos por caso;
-- 6 variantes de método, incluindo a ablation.
+- development seed: 7;
+- evaluation seeds: 42, 43, 44, 45, 46;
+- 100 eventos por cenário;
+- 8 cenários emparelhados;
+- 10 candidatos por caso.
 
-Outputs:
+Os outputs mínimos são:
 
 ```text
-benchmarks/seed_42.jsonl
-...
-benchmarks/seed_46.jsonl
-results/per_case.csv
-results/by_scenario.csv
-results/summary.csv
-results/manifest.json
-results/report.md
-figures/robustness_by_scenario.png
+results/
+  benchmark.jsonl
+  per_case.csv
+  by_scenario.csv
+  summary.csv
+  report.md
+  experiment_manifest.json
 ```
 
-## 6. Explicar um caso de um benchmark existente
+São ainda escritos `benchmarks/seed_<n>.jsonl`, `manifest.json` como alias compatível e `figures/robustness_by_scenario.png`. O manifest inclui configuração, execução efetiva, versões, timestamp, commit disponível e hashes SHA-256.
 
-```bash
-python -m recon_benchmark.cli explain \
-  --input benchmarks/seed_42.jsonl \
-  --case-index 0 \
-  --method M4 \
-  --output examples/case_explanation.md
+## Cenários emparelhados
+
+| Código | `Scenario` | Alteração experimental adicional |
+|---|---|---|
+| P0 | `natural_variation` | nenhuma; conserva apenas as diferenças naturais dos renderers |
+| P1 | `amount_variation` | variação absoluta ou proporcional |
+| P2 | `date_variation` | deslocamento curto, médio ou longo |
+| P3 | `reference_variation` | formato, transposição, substituição ou referência bancária adicional |
+| P4 | `entity_variation` | truncation, typo, casing/acento ou label bancária |
+| P5 | `description_variation` | reorder, remoção, truncation, boilerplate ou abreviação |
+| P6 | `missing_information` | remoção de reference ou counterparty disponível |
+| P7 | `combined_variation` | três famílias distintas |
+
+Cada alteração declarada é verificada contra o movimento bancário natural; uma perturbação no-op lança erro.
+
+## Candidatos
+
+Cada evento usa exatamente o mesmo candidate set e a mesma ordem nos oito cenários:
+
+- 1 candidato verdadeiro;
+- 6 natural negatives: registos contabilísticos completos, renderizados de outros `FinancialEvent` do ledger;
+- 3 controlled hard negatives: conflitos controlados em amount/date/reference, entity/documento e múltiplas evidências.
+
+Todos os IDs dos candidatos têm o mesmo formato opaco. A ordem é baralhada de forma determinística. Os hard negatives não consultam a perturbação nem o movimento observado, evitando candidate leakage entre cenários.
+
+## Missing e proteção contra leakage
+
+Um campo ausente é excluído da média. O gerador preserva o mesmo padrão de disponibilidade entre os dez candidatos e a avaliação rejeita rankings com números de campos comparados diferentes.
+
+`score_pair()` aceita apenas:
+
+```text
+BankTransaction + AccountingRecord + MatchingMethod + ExperimentConfig
 ```
 
-## Cenários
+`event_id`, `true_candidate_id`, cenário, perturbações e origem do candidato permanecem fora dessa fronteira e só são usados pelo gerador/avaliador.
 
-| Cenário | Alteração aplicada ao movimento bancário |
-|---|---|
-| `P0_CLEAN` | nenhuma |
-| `P1_AMOUNT_NOISE` | ±0,01 €, ±0,05 € ou ±0,10 € |
-| `P2_DATE_DRIFT` | ±1, ±2 ou ±3 dias |
-| `P3_REFERENCE_NOISE` | separadores, compactação, transposição ou substituição de dígitos |
-| `P4_ENTITY_NOISE` | sufixo, truncation, typo ou casing/acento |
-| `P5_DESCRIPTION_NOISE` | reorder, remoção de token, truncation, boilerplate ou abreviação |
-| `P6_MISSING_INFORMATION` | 50% sem reference; 50% sem counterparty |
-| `P7_COMBINED` | três famílias distintas de ruído |
-
-A perturbação é aplicada apenas ao lado bancário. O registo contabilístico correto permanece canónico.
-
-## Hard negatives
-
-Cada caso contém um candidato correto e nove candidatos incorretos mas plausíveis. Os negativos preservam evidências como:
-
-- mesmo montante;
-- mesma data;
-- referência próxima;
-- mesma entidade;
-- montante + data próxima;
-- montante + entidade;
-- montante + data + referência próxima;
-- descrição semelhante + entidade;
-- montante + data + entidade, mas referência errada e próxima.
-
-O N9 é ajustado ao cenário e preserva, quando aplicável, valores do movimento bancário observado. Esta decisão evita que o baseline exato permaneça artificialmente dominante depois de uma perturbação. O racional está documentado em [`docs/IMPLEMENTATION_DECISIONS.md`](docs/IMPLEMENTATION_DECISIONS.md).
-
-Assim o benchmark mede ambiguidade realista e não apenas a capacidade de separar pares totalmente diferentes.
-
-## Métricas
-
-**Unique Top-1 Accuracy:** só conta como correto quando o true candidate tem o maior score sem empate.
-
-**MRR:** mede quão perto do topo ficou o candidato correto, usando average rank em empates.
-
-**Tie Rate:** percentagem de casos em que existem vários candidatos com o score máximo.
-
-## Estrutura do código
+## Estrutura
 
 ```text
 src/recon_benchmark/
-  models.py            modelos imutáveis
-  config.py            protocolo e configuração
-  synthetic_data.py    entidades, referências e descrições fictícias
-  perturbations.py     ruído controlado
-  negatives.py         nove hard negatives
-  normalization.py     preparação por campo
-  similarity.py        Jaro-Winkler e q-gram cosine
-  matchers.py          M0-M4 e ablation
-  evaluation.py        ranking e métricas
-  reporting.py         CSV, manifest, relatório e figura
-  explanation.py       walkthrough de um caso
-  pipeline.py          execução ponta a ponta
-  cli.py               interface de linha de comandos
+  __main__.py                 entrada para python -m recon_benchmark
+  domain/
+    models.py                 dataclasses imutáveis e StrEnum
+    validation.py             validação dos campos usados por from_dict
+    codes.py                  códigos de métodos e cenários para os outputs
+  experiment/
+    models.py                 classe ExperimentConfig e respetivas invariantes
+    config.py                 leitura e conversão da configuração JSON
+    pipeline.py               coordenação da experiência completa
+  storage/
+    serialization.py          leitura e escrita de JSONL
+  cli/
+    __main__.py               entrada para python -m recon_benchmark.cli
+    main.py                   argumentos e encaminhamento dos comandos
+    explanation.py            explicações de casos para demo/explain
+  generation/
+    models.py                 classes LedgerEntry e CandidateIdentity
+    errors.py                 exceção de perturbação no-op
+    synthetic_data.py         FinancialEvent e renderers independentes
+    negatives.py              natural e controlled hard negatives
+    perturbations.py          alterações experimentais com guardas no-op
+    generator.py              montagem e validação dos casos emparelhados
+  templates/
+    bank.py                   descrições e formatos de referência bancários
+    accounting.py             descrições e formatos contabilísticos
+  normalization/
+    fields.py                 normalização por campo
+  ranking/
+    models.py                 classes de scores e componentes de referência
+    similarity.py             Jaro-Winkler e character n-grams
+    matchers.py               scores transparentes M0–M4
+    ordering.py               ordenação dos candidatos por score
+  metrics/
+    models.py                 classes CaseEvaluation e AggregateMetrics
+    evaluation.py             ground truth, average rank e métricas
+    reporting.py              CSV, agregação entre seeds, relatório e manifest
 ```
 
-## Guardrails científicos
+Todas as pastas do pacote contêm `__init__.py`. Os comandos `recon-benchmark`,
+`python -m recon_benchmark` e `python -m recon_benchmark.cli` usam a mesma CLI.
+Os imports Python seguem agora os subpacotes, por exemplo
+`from recon_benchmark.generation.generator import generate_benchmark`.
 
-- O matcher não recebe `true_candidate_id`, `scenario` nem `perturbations`.
-- Todos os métodos recebem os mesmos casos e candidatos.
-- Os candidatos são baralhados deterministicamente.
-- Não existem pesos aprendidos ou arbitrários.
-- A seed de desenvolvimento é separada das cinco seeds finais.
-- A configuração final fica registada em `manifest.json`.
-- Resultados sintéticos não permitem afirmar desempenho em produção.
+Para estudar o código, começar em `domain/models.py` e seguir `generation/`,
+`templates/`, `normalization/`, `ranking/` e `metrics/`. O pipeline coordena
+essas etapas; a CLI interpreta os comandos e chama as operações correspondentes.
 
-## Leitura recomendada
+As classes de dados ficam nos ficheiros `models.py` de cada área; as funções de
+processamento ficam nos restantes módulos. Métodos próprios dos objetos, como
+`validate()`, `to_dict()` e `from_dict()`, permanecem nas respetivas classes.
+Por exemplo, `ranking/models.py` define `ScoreBreakdown`, enquanto
+`ranking/matchers.py` contém a função `score_pair()` que calcula esse resultado.
 
-1. [`docs/FLOW_WALKTHROUGH.md`](docs/FLOW_WALKTHROUGH.md)
-2. [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md)
-3. [`docs/IMPLEMENTATION_DECISIONS.md`](docs/IMPLEMENTATION_DECISIONS.md)
-4. [`docs/REFERENCES.md`](docs/REFERENCES.md)
-5. `src/recon_benchmark/generator.py`
-6. `src/recon_benchmark/matchers.py`
-7. `src/recon_benchmark/evaluation.py`
+## Limites
 
+O benchmark não cobre 1:N, N:1, N:N, ausência do candidato verdadeiro, fees/FX/partial payments como relações complexas, integração ERP ou calibração de auto-reconciliação. Resultados sintéticos não demonstram desempenho em produção.

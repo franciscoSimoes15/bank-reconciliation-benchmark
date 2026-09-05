@@ -20,7 +20,7 @@ dev = [
 ]
 
 [project.scripts]
-recon-benchmark = "recon_benchmark.cli:main"
+recon-benchmark = "recon_benchmark.cli.main:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

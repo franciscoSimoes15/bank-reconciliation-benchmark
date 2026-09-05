@@ -1,36 +1,36 @@
-# Explicação do caso `S7-P3_REFERENCE_NOISE-C0000`
+# Explicação do caso `case_b3926378b2e4f008d0bc`
 
 - Seed: `7`
-- Cenário: `P3_REFERENCE_NOISE`
-- Perturbações: `reference:separators`
-- Método: `M4`
-- Ground truth usado apenas na avaliação: `S7-P3_REFERENCE_NOISE-C0000-TRUE`
+- Cenário: `natural_variation` (P0)
+- Perturbações: `nenhuma`
+- Método: `field_aware` (M4)
+- Ground truth usado apenas na avaliação: `cand_fa3851642bc36ebf11d8`
 
-## 1. Movimento bancário recebido pelo matcher
+## Movimento bancário recebido pelo matcher
 
 | Campo | Raw | Normalizado |
 |---|---|---|
-| Amount | `-458.46` | `-458.46` |
-| Date | `2026-04-10` | `2026-04-10` |
-| Reference | `REC 2026 70004` | `rec202670004` |
-| Counterparty | `PONTE CONSULTORIA LDA` | `ponte consultoria` |
-| Description | `TRF P/ PONTE CONSULTORIA LDA REF REC2026/70004` | `trf p ponte consultoria lda ref rec2026 70004` |
+| Amount | `5261.27` | `5261.27` |
+| Date | `2026-01-11` | `2026-01-11` |
+| Reference | `REC2026 0070001` | `rec20260070001` |
+| Counterparty | `Horizonte Energ` | `horizonte energ` |
+| Description | `TRF SEPA RECEBIDA CONTA EMPRESA` | `trf sepa recebida conta empresa` |
 
-## 2. Ranking dos candidatos
+## Ranking dos candidatos
 
-| Rank visual | Candidato | True? | Score | Amount | Date | Reference | Entity | Description | Excluídos |
-|---:|---|:---:|---:|---:|---:|---:|---:|---:|---|
-| 1 | `S7-P3_REFERENCE_NOISE-C0000-TRUE` | ✅ | 1.000000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | — |
-| 2 | `S7-P3_REFERENCE_NOISE-C0000-N9` |  | 0.989484 | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 0.9474 | — |
-| 3 | `S7-P3_REFERENCE_NOISE-C0000-N7` |  | 0.934529 | 1.0000 | 1.0000 | 0.9667 | 0.7485 | 0.9574 | — |
-| 4 | `S7-P3_REFERENCE_NOISE-C0000-N5` |  | 0.747143 | 1.0000 | 1.0000 | 0.7190 | 0.7485 | 0.2682 | — |
-| 5 | `S7-P3_REFERENCE_NOISE-C0000-N6` |  | 0.694350 | 1.0000 | 0.0000 | 0.7190 | 1.0000 | 0.7527 | — |
-| 6 | `S7-P3_REFERENCE_NOISE-C0000-N8` |  | 0.571981 | 0.0000 | 0.0000 | 0.9667 | 1.0000 | 0.8932 | — |
-| 7 | `S7-P3_REFERENCE_NOISE-C0000-N1` |  | 0.547143 | 1.0000 | 0.0000 | 0.7190 | 0.7485 | 0.2682 | — |
-| 8 | `S7-P3_REFERENCE_NOISE-C0000-N2` |  | 0.547143 | 0.0000 | 1.0000 | 0.7190 | 0.7485 | 0.2682 | — |
-| 9 | `S7-P3_REFERENCE_NOISE-C0000-N3` |  | 0.534529 | 0.0000 | 0.0000 | 0.9667 | 0.7485 | 0.9574 | — |
-| 10 | `S7-P3_REFERENCE_NOISE-C0000-N4` |  | 0.494350 | 0.0000 | 0.0000 | 0.7190 | 1.0000 | 0.7527 | — |
+| Rank visual | Candidato | True? | Score | Campos | Amount | Date | Reference | Entity | Description | Excluídos |
+|---:|---|:---:|---:|---:|---:|---:|---:|---:|---:|---|
+| 1 | `cand_fa3851642bc36ebf11d8` | sim | 0.816033 | 5 | 1.0000 | 1.0000 | 1.0000 | 0.9765 | 0.1037 | — |
+| 2 | `cand_977c5ed6919d0ab4ac0d` |  | 0.669366 | 5 | 1.0000 | 0.9667 | 0.3000 | 0.9765 | 0.1037 | — |
+| 3 | `cand_15b9caea5a85c994de52` |  | 0.629366 | 5 | 1.0000 | 0.7667 | 0.3000 | 0.9765 | 0.1037 | — |
+| 4 | `cand_039c54d96f5cce081eca` |  | 0.547411 | 5 | 1.0000 | 1.0000 | 0.3000 | 0.4037 | 0.0334 | — |
+| 5 | `cand_0d8f0b07aacdd66b55e9` |  | 0.298629 | 5 | 0.0000 | 0.6333 | 0.3000 | 0.5265 | 0.0334 | — |
+| 6 | `cand_0783ddf1d37cad2cc9fd` |  | 0.188636 | 5 | 0.0000 | 0.0000 | 0.3000 | 0.5395 | 0.1037 | — |
+| 7 | `cand_d2511cec5475c6191369` |  | 0.183598 | 5 | 0.0000 | 0.0000 | 0.3000 | 0.5846 | 0.0334 | — |
+| 8 | `cand_189f01097059892c0870` |  | 0.178734 | 5 | 0.0000 | 0.0000 | 0.3000 | 0.5603 | 0.0334 | — |
+| 9 | `cand_032b72743ce978f4687f` |  | 0.169945 | 5 | 0.0000 | 0.0000 | 0.3000 | 0.5164 | 0.0334 | — |
+| 10 | `cand_c54a4c0d3e32b17fa882` |  | 0.150921 | 5 | 0.0000 | 0.0000 | 0.1500 | 0.4250 | 0.1796 | — |
 
-## 3. Como ler
+O score final é a média simples dos campos disponíveis. Um campo ausente em qualquer lado é excluído. A geração valida que todos os candidatos do caso são comparados no mesmo número de campos.
 
-O score final é a média simples dos campos disponíveis. Um campo ausente em qualquer lado é excluído, em vez de ser tratado como desacordo. O método nunca consulta o `true_candidate_id`; esse valor só é usado depois do ranking para calcular as métricas.
+O matcher recebe apenas o movimento bancário e um registo contabilístico. `event_id`, cenário, perturbações, origem e ground truth só são consultados depois do scoring.

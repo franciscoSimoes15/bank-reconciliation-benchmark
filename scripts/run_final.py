@@ -10,7 +10,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from recon_benchmark.cli import main  # noqa: E402
+from recon_benchmark.cli.main import main  # noqa: E402
 
 
 if __name__ == "__main__":

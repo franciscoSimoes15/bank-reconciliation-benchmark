@@ -2,21 +2,23 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence, cast
 
-from recon_benchmark.config import ExperimentConfig, load_config
-from recon_benchmark.explanation import write_case_explanation
-from recon_benchmark.generator import generate_benchmark, generate_to_file, validate_benchmark
-from recon_benchmark.matchers import METHODS, MethodName
-from recon_benchmark.pipeline import run_experiment
-from recon_benchmark.serialization import read_jsonl, write_jsonl
+from recon_benchmark.experiment.models import ExperimentConfig
+from recon_benchmark.experiment.config import load_config
+from recon_benchmark.cli.explanation import write_case_explanation
+from recon_benchmark.generation.generator import generate_benchmark, generate_to_file, validate_benchmark
+from recon_benchmark.ranking.matchers import METHODS
+from recon_benchmark.domain.models import MatchingMethod, Scenario
+from recon_benchmark.experiment.pipeline import run_experiment
+from recon_benchmark.storage.serialization import read_jsonl, write_jsonl
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="recon-benchmark",
-        description="Benchmark sintético de matching 1:1 para reconciliação bancária.",
+        description="Benchmark sintético de ranking 1:1 para reconciliação bancária.",
     )
     parser.add_argument(
         "--config",
@@ -34,22 +36,33 @@ def build_parser() -> argparse.ArgumentParser:
     validate_parser.add_argument("--input", required=True)
     validate_parser.add_argument("--cases-per-scenario", type=int, default=None)
 
-    evaluate_parser = subparsers.add_parser("evaluate", help="Gerar e avaliar uma seed.")
+    evaluate_parser = subparsers.add_parser(
+        "evaluate",
+        help="Executar uma experiência de desenvolvimento.",
+    )
     evaluate_parser.add_argument("--seed", type=int, default=7)
     evaluate_parser.add_argument("--cases-per-scenario", type=int, default=3)
     evaluate_parser.add_argument("--methods", nargs="+", default=["all"])
     evaluate_parser.add_argument("--output-root", default="development_run")
 
-    final_parser = subparsers.add_parser("run-final", help="Executar as evaluation seeds congeladas.")
-    final_parser.add_argument("--seeds", nargs="+", type=int, default=None)
-    final_parser.add_argument("--cases-per-scenario", type=int, default=None)
-    final_parser.add_argument("--methods", nargs="+", default=["all"])
+    final_parser = subparsers.add_parser(
+        "run-final",
+        help="Executar a configuração e as evaluation seeds congeladas.",
+    )
     final_parser.add_argument("--output-root", default=".")
 
     demo_parser = subparsers.add_parser("demo", help="Gerar e explicar um caso ponta a ponta.")
     demo_parser.add_argument("--seed", type=int, default=7)
-    demo_parser.add_argument("--scenario", default="P7_COMBINED")
-    demo_parser.add_argument("--method", default="M4", choices=METHODS)
+    demo_parser.add_argument(
+        "--scenario",
+        default=Scenario.COMBINED_VARIATION.value,
+        choices=[scenario.value for scenario in Scenario],
+    )
+    demo_parser.add_argument(
+        "--method",
+        default=MatchingMethod.FIELD_AWARE.value,
+        choices=[method.value for method in METHODS],
+    )
     demo_parser.add_argument("--output", default="examples/demo_trace.md")
     demo_parser.add_argument("--benchmark-output", default="examples/demo_benchmark.jsonl")
 
@@ -57,7 +70,11 @@ def build_parser() -> argparse.ArgumentParser:
     explain_parser.add_argument("--input", required=True)
     explain_parser.add_argument("--case-id", default=None)
     explain_parser.add_argument("--case-index", type=int, default=0)
-    explain_parser.add_argument("--method", default="M4", choices=METHODS)
+    explain_parser.add_argument(
+        "--method",
+        default=MatchingMethod.FIELD_AWARE.value,
+        choices=[method.value for method in METHODS],
+    )
     explain_parser.add_argument("--output", default="examples/case_explanation.md")
 
     return parser
@@ -95,11 +112,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
         if args.command == "evaluate":
-            methods = _parse_methods(args.methods)
             outputs = run_experiment(
                 seeds=[args.seed],
                 cases_per_scenario=args.cases_per_scenario,
-                methods=methods,
+                methods=_parse_methods(args.methods),
                 config=config,
                 root=args.output_root,
             )
@@ -107,13 +123,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
         if args.command == "run-final":
-            methods = _parse_methods(args.methods)
-            seeds = args.seeds or list(config.evaluation_seeds)
-            cases_per_scenario = args.cases_per_scenario or config.cases_per_scenario
             outputs = run_experiment(
-                seeds=seeds,
-                cases_per_scenario=cases_per_scenario,
-                methods=methods,
+                seeds=config.evaluation_seeds,
+                cases_per_scenario=config.cases_per_scenario,
+                methods=config.methods,
                 config=config,
                 root=args.output_root,
             )
@@ -121,14 +134,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
 
         if args.command == "demo":
-            if args.scenario not in config.scenarios:
-                raise ValueError(f"Cenário desconhecido: {args.scenario}")
+            scenario = Scenario(args.scenario)
+            if scenario not in config.scenarios:
+                raise ValueError(f"Cenário desconhecido: {scenario.value}")
             cases = generate_benchmark(seed=args.seed, cases_per_scenario=1, config=config)
             write_jsonl(cases, args.benchmark_output)
-            case = next(case for case in cases if case.scenario == args.scenario)
+            case = next(item for item in cases if item.scenario is scenario)
             output = write_case_explanation(
                 case,
-                method=cast(MethodName, args.method),
+                method=MatchingMethod(args.method),
                 config=config,
                 output=args.output,
             )
@@ -141,7 +155,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if not cases:
                 raise ValueError("O benchmark não contém casos.")
             if args.case_id:
-                selected = next((case for case in cases if case.case_id == args.case_id), None)
+                selected = next((item for item in cases if item.case_id == args.case_id), None)
                 if selected is None:
                     raise ValueError(f"Case ID não encontrado: {args.case_id}")
             else:
@@ -150,7 +164,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 selected = cases[args.case_index]
             output = write_case_explanation(
                 selected,
-                method=cast(MethodName, args.method),
+                method=MatchingMethod(args.method),
                 config=config,
                 output=args.output,
             )
@@ -170,13 +184,13 @@ def _load_cli_config(path: str) -> ExperimentConfig:
     return load_config(config_path if config_path.exists() else None)
 
 
-def _parse_methods(values: Sequence[str]) -> tuple[MethodName, ...]:
-    if values == ["all"]:
+def _parse_methods(values: Sequence[str]) -> tuple[MatchingMethod, ...]:
+    if list(values) == ["all"]:
         return METHODS
-    invalid = set(values) - set(METHODS)
-    if invalid:
-        raise ValueError(f"Métodos desconhecidos: {sorted(invalid)}")
-    return tuple(cast(MethodName, value) for value in values)
+    try:
+        return tuple(MatchingMethod(value) for value in values)
+    except ValueError as exc:
+        raise ValueError(f"Método desconhecido em {list(values)}") from exc
 
 
 def _print_outputs(outputs: dict[str, Path]) -> None:

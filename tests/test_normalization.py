@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from recon_benchmark.normalization import (
+from recon_benchmark.normalization.fields import (
     normalize_amount,
     normalize_description,
     normalize_entity,

@@ -1,67 +1,45 @@
-# Decisões e correções antes do freeze
+# Decisões de implementação antes do freeze
 
-Este ficheiro regista alterações feitas durante a development seed `7`, antes de executar as evaluation seeds `42–46`.
+Este ficheiro regista decisões do protocolo implementadas com a development seed `7`, antes das evaluation seeds `42–46`.
 
-## 1. Problema detetado no primeiro smoke run
+## Evento latente e renderização
 
-A primeira versão dos hard negatives produziu `100%` de Unique Top-1 em todos os métodos e cenários.
+O modelo antigo construía primeiro o `AccountingRecord` e copiava-o para `BankTransaction`. Foi removido. Agora um `FinancialEvent` latente alimenta dois renderers independentes com fontes de aleatoriedade separadas.
 
-### Causa confirmada
+As descrições representam convenções da fonte, não um identificador oculto comum. Em particular, não incluem sistematicamente reference/entity, para evitar dupla contagem desses sinais na agregação.
 
-As perturbações alteravam um ou mais campos do movimento bancário, mas os negativos eram gerados apenas a partir do registo contabilístico canónico. Como consequência, o true candidate continuava geralmente a ter mais acordos exatos do que qualquer candidato falso.
+## Candidate sets
 
-Exemplo simplificado:
+Os candidate sets são construídos antes das perturbações e reutilizados sem alteração de conteúdo ou ordem nos oito cenários. Isto elimina a antiga dependência de um negativo em valores observados no cenário.
 
-```text
-True candidate: 4 de 5 campos exatos
-Melhor negative: 3 de 5 campos exatos
-```
+A composição fica fixa em 1+6+3:
 
-Assim, mesmo o M0 conseguia vencer sem precisar de robustez à perturbação. O benchmark não estava a testar a hipótese pretendida.
+- o true candidate é a renderização contabilística do evento;
+- seis natural negatives são registos reais do ledger sintético, provenientes de outros eventos;
+- três controlled hard negatives são novos eventos coerentes que partilham evidências específicas.
 
-## 2. Correção aplicada
+Os IDs usam o mesmo formato opaco independentemente da origem.
 
-O candidato `N9` passou a ser **scenario-aware**: é construído também a partir do movimento bancário observado, para competir diretamente com a família de ruído aplicada.
+## Disponibilidade e missing
 
-Exemplos:
+Os tipos de operação determinam se reference/entity existem. Para impedir que um candidato beneficie por ter menos evidências comparadas, os dez candidatos de um caso conservam o mesmo padrão de disponibilidade. O cenário missing remove informação do lado bancário, afetando todos de forma igual.
 
-- `P1_AMOUNT_NOISE`: N9 tem o montante observado exato, mas uma referência próxima e errada.
-- `P2_DATE_DRIFT`: N9 tem a data observada exata, mas uma referência próxima e errada.
-- `P3_REFERENCE_NOISE`: N9 usa a referência ruidosa exata, mas a descrição acompanha essa referência errada.
-- `P4_ENTITY_NOISE`: N9 usa a entidade ruidosa exata, mas a descrição acompanha a entidade errada.
-- `P5_DESCRIPTION_NOISE`: N9 usa a descrição observada exata, mas uma referência próxima e errada.
-- `P7_COMBINED`: N9 preserva vários valores observados e mantém pelo menos uma evidência forte incorreta.
+Além do registo de `compared_field_count`, a avaliação falha quando as contagens diferem entre candidatos.
 
-Esta alteração afeta todos os métodos igualmente. Não foi introduzida para fazer o M4 vencer; foi introduzida para evitar que o M0 resolvesse o problema sem enfrentar a perturbação.
+## Scores
 
-## 3. Missing information
+M0 e M1 mantêm as regras exatas/binárias. M2–M4 usam funções lineares e limitadas a `[0,1]` para proximidade de amount/date. A escala de amount é o máximo entre 1 euro e 1% do maior montante absoluto; a escala temporal é 30 dias. Estes valores estão explícitos na configuração porque o protocolo exige gradualidade, mas não fixa a função.
 
-No cenário `P6_MISSING_INFORMATION`:
+M4 decompõe referências reconhecidas em prefixo, ano e número. A combinação transparente é 15% prefixo, 15% ano e 70% número; o número tem de ser exatamente igual. Jaro-Winkler é fallback quando o formato não é reconhecido. Estes pesos são internos ao comparador estruturado, não pesos aprendidos da agregação de campos.
 
-- metade dos casos remove `reference` e cria uma alternativa que difere apenas nessa evidência invisível, produzindo ambiguidade irreduzível;
-- metade remove `counterparty`, mas mantém informação suficiente na descrição/referência para que o true candidate possa ser recuperado.
+A média dos campos disponíveis não usa pesos treinados. `FIELD_AWARE_WITHOUT_DESCRIPTION` mantém-se apenas como ablation simples.
 
-O objetivo é distinguir:
+O desvio-padrão agregado é amostral (`n-1`) e vale zero quando a execução contém apenas uma seed.
 
-```text
-missing mas ainda resolúvel
-```
+## Casos sem reference/entity
 
- de:
+Nem todos os tipos têm documento ou entidade contabilística. Nesses casos, um hard negative usa apenas os conflitos possíveis sem inventar campos. Em `reference_variation`, uma referência originalmente ausente pode receber um trace bancário; em `entity_variation`, uma entidade ausente pode receber uma label da fonte. Ambas são alterações reais, mas não passam a criar evidência contabilística artificial.
 
-```text
-missing que torna dois candidatos observacionalmente indistinguíveis
-```
+## Freeze
 
-## 4. Critério para aceitar a correção
-
-Depois da alteração:
-
-- M0 já não resolve automaticamente os cenários com ruído;
-- M1 isola o benefício de tolerâncias de amount/date;
-- M2 e M3 exibem comportamentos diferentes perante texto;
-- M4 melhora alguns tipos de campo, mas não vence necessariamente todos os cenários;
-- P6 mantém uma fração deliberadamente ambígua;
-- os testes e invariantes continuam a passar.
-
-A partir da execução das seeds `42–46`, estas escolhas ficam congeladas salvo bug confirmado e documentado.
+`run-final` usa diretamente `config/experiment.json` e não disponibiliza overrides de seeds, tamanho ou métodos. O manifest regista a configuração efetiva, versões, timestamp, commit e hashes. Depois das seeds `42–46`, mudanças metodológicas exigem um novo protocolo; apenas bugs confirmados podem justificar correções desta versão.
