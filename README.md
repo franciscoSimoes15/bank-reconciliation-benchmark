@@ -158,6 +158,29 @@ BankTransaction + AccountingRecord + MatchingMethod + ExperimentConfig
 
 ## Estrutura
 
+### Guias por componente
+
+Os guias seguintes, em inglês, explicam os conceitos e a implementação atual,
+com exemplos, ligações ao código e aos testes. Para acompanhar um caso desde a
+origem, seguir domínio, geração, normalização, ranking e métricas.
+
+| Guia | O que explica |
+|---|---|
+| [Domain](src/recon_benchmark/domain/README.md) | Eventos, representações, candidatos, casos e fronteiras de dados |
+| [Generation](src/recon_benchmark/generation/README.md) | Tipos de operação, renderers, ledger e montagem dos casos |
+| [Templates](src/recon_benchmark/templates/README.md) | Convenções bancárias e contabilísticas independentes |
+| [Scenarios](src/recon_benchmark/generation/README_SCENARIOS.md) | Os oito cenários e o emparelhamento dos casos |
+| [Perturbations](src/recon_benchmark/generation/README_PERTURBATIONS.md) | Alterações disponíveis, tags, missing e proteção contra no-op |
+| [Negatives](src/recon_benchmark/generation/README_NEGATIVES.md) | Composição 1+6+3 e construção de candidatos difíceis |
+| [Normalization](src/recon_benchmark/normalization/README.md) | Regras por campo e exemplos antes/depois |
+| [Ranking](src/recon_benchmark/ranking/README.md) | Métodos, semelhança textual, proximidade gradual e scores |
+| [Metrics](src/recon_benchmark/metrics/README.md) | Unique Top-1, MRR, empates, agregação e outputs |
+| [Experiment](src/recon_benchmark/experiment/README.md) | Configuração, seeds, parâmetros efetivos e pipeline |
+| [Storage](src/recon_benchmark/storage/README.md) | JSONL, serialização e inspeção legível |
+| [CLI](src/recon_benchmark/cli/README.md) | Comandos, argumentos e exemplos práticos |
+
+### Ficheiros
+
 ```text
 src/recon_benchmark/
   __main__.py                 entrada para python -m recon_benchmark
