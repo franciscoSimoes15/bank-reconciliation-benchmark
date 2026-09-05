@@ -14,6 +14,13 @@ DEFAULT_METHODS: tuple[MatchingMethod, ...] = tuple(MatchingMethod)
 
 @dataclass(frozen=True, slots=True)
 class ExperimentConfig:
+    """Shared parameters controlling generation, scoring and final evaluation.
+
+    The frozen dataclass prevents field reassignment during a run. Decimal values
+    configure amount comparisons; scales control gradual scores, and tie_epsilon
+    is an absolute score tolerance. validate() must be called explicitly.
+    Development commands can pass run-specific sizes and methods separately.
+    """
     cases_per_scenario: int = 100
     candidates_per_case: int = 10
     natural_negative_count: int = 6
@@ -31,6 +38,11 @@ class ExperimentConfig:
     methods: tuple[MatchingMethod, ...] = DEFAULT_METHODS
 
     def validate(self) -> None:
+        """Reject invalid sizes, tolerances, seeds or protocol composition with ValueError.
+
+        Require the configured candidate split and complete ordered scenario/method
+        sets. This validates parameters; it does not generate or inspect any cases.
+        """
         if self.cases_per_scenario <= 0:
             raise ValueError("cases_per_scenario tem de ser positivo.")
         if self.natural_negative_count != 6:
@@ -67,6 +79,11 @@ class ExperimentConfig:
             raise ValueError("O protocolo exige M0–M4 e a ablation M4-D configurados.")
 
     def to_dict(self) -> dict[str, object]:
+        """Return JSON-compatible parameters for the experiment manifest.
+
+        Represent Decimal values as strings, enum members by their descriptive values,
+        and tuples as lists so the recorded configuration can be inspected and reloaded.
+        """
         return {
             "cases_per_scenario": self.cases_per_scenario,
             "candidates_per_case": self.candidates_per_case,

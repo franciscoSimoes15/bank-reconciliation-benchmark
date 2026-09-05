@@ -11,6 +11,11 @@ _CENT = Decimal("0.01")
 
 
 def normalize_text(value: str | None) -> str | None:
+    """Normalize optional text for comparison by removing accents and unifying spacing/case.
+
+    Keep ASCII letters and digits, replace other characters with spaces, and return
+    None for absent input or a result with no remaining content.
+    """
     if value is None:
         return None
     decomposed = unicodedata.normalize("NFKD", value)
@@ -22,6 +27,11 @@ def normalize_text(value: str | None) -> str | None:
 
 
 def normalize_reference(value: str | None) -> str | None:
+    """Normalize a reference and remove spaces so formatting separators do not cause
+    disagreement.
+
+    Preserve an absent or empty normalized reference as None.
+    """
     normalized = normalize_text(value)
     if normalized is None:
         return None
@@ -30,6 +40,10 @@ def normalize_reference(value: str | None) -> str | None:
 
 
 def normalize_entity(value: str | None) -> str | None:
+    """Normalize an entity name and remove the generated legal-form tokens lda and sa.
+
+    Preserve the remaining word order and return None when no content remains.
+    """
     normalized = normalize_text(value)
     if normalized is None:
         return None
@@ -39,8 +53,12 @@ def normalize_entity(value: str | None) -> str | None:
 
 
 def normalize_description(value: str | None) -> str | None:
+    """Apply shared text normalization while preserving description word order and content
+    tokens.
+    """
     return normalize_text(value)
 
 
 def normalize_amount(value: Decimal) -> Decimal:
+    """Round a Decimal amount to cents with ROUND_HALF_UP for consistent money comparisons."""
     return value.quantize(_CENT, rounding=ROUND_HALF_UP)

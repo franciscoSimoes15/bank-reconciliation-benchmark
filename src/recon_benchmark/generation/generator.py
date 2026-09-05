@@ -39,6 +39,13 @@ def generate_benchmark(
     cases_per_scenario: int,
     config: ExperimentConfig,
 ) -> tuple[BenchmarkCase, ...]:
+    """Build validated, reproducible ranking cases for one seed.
+
+    Generate a supporting ledger, then one bank record and a shuffled 1+6+3
+    candidate set per target event. Reuse that set across all configured scenarios,
+    perturbing only the bank record. Return cases_per_scenario times the number
+    of scenarios as an immutable tuple; invalid cases raise before return.
+    """
     if cases_per_scenario <= 0:
         raise ValueError("cases_per_scenario tem de ser positivo.")
     config.validate()
@@ -128,6 +135,10 @@ def generate_to_file(
     config: ExperimentConfig,
     output: str | Path,
 ) -> Path:
+    """Generate validated cases for one seed and write them to a JSONL file.
+
+    Return the output path; existing content at that path is replaced.
+    """
     cases = generate_benchmark(
         seed=seed,
         cases_per_scenario=cases_per_scenario,
@@ -137,6 +148,11 @@ def generate_to_file(
 
 
 def validate_case(case: BenchmarkCase, config: ExperimentConfig) -> None:
+    """Check one case's candidate composition, IDs, labels and field availability.
+
+    Also reject negatives identical to truth and inconsistent perturbation labels.
+    Raise ValueError on the first violation; cross-scenario checks are separate.
+    """
     if len(case.candidates) != config.candidates_per_case:
         raise ValueError(
             f"{case.case_id}: {len(case.candidates)} candidatos; "
@@ -205,6 +221,12 @@ def validate_benchmark(
     config: ExperimentConfig,
     expected_cases_per_scenario: int | None = None,
 ) -> list[str]:
+    """Collect case and cross-scenario validation errors without stopping at the first.
+
+    Check duplicate case IDs, optional expected scenario counts, paired candidate
+    sets and truth, and experimental records unchanged from natural variation.
+    Return an empty list when these checks find no violations.
+    """
     errors: list[str] = []
     case_list = list(cases)
     case_ids = [case.case_id for case in case_list]
@@ -256,6 +278,7 @@ def validate_benchmark(
 
 
 def benchmark_digest(path: str | Path) -> str:
+    """Hash the exact JSONL file bytes with SHA-256, reading in bounded-size chunks."""
     digest = hashlib.sha256()
     with Path(path).open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
@@ -264,6 +287,11 @@ def benchmark_digest(path: str | Path) -> str:
 
 
 def _generate_ledger(*, seed: int, event_count: int) -> tuple[LedgerEntry, ...]:
+    """Create latent events and accounting records using separate derived RNG streams.
+
+    Return generation-only LedgerEntry objects from which target events and
+    natural-negative records can be selected.
+    """
     entries: list[LedgerEntry] = []
     for index in range(event_count):
         event = generate_financial_event(
@@ -282,11 +310,21 @@ def _generate_ledger(*, seed: int, event_count: int) -> tuple[LedgerEntry, ...]:
 
 
 def _derived_seed(seed: int, *parts: object) -> int:
+    """Derive a stable integer seed from a base seed and operation-specific labels.
+
+    Separate labels isolate renderer, selection, perturbation and shuffle streams
+    without relying on global randomness or Python's process-dependent hash().
+    """
     payload = "|".join((str(seed), *(str(part) for part in parts))).encode("utf-8")
     return int.from_bytes(hashlib.sha256(payload).digest()[:8], byteorder="big", signed=False)
 
 
 def _opaque_id(kind: str, seed: int, *parts: object) -> str:
+    """Create a deterministic typed ID whose hash hides readable generation labels.
+
+    All candidate origins share the cand_ format. This is an opaque benchmark
+    identifier, not a security or anonymization mechanism.
+    """
     namespace = "candidate" if kind == "candidate" else kind
     payload = "|".join(("benchmark-v2", namespace, str(seed), *(str(part) for part in parts)))
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:20]
@@ -302,10 +340,12 @@ def _opaque_id(kind: str, seed: int, *parts: object) -> str:
 
 
 def _availability_pattern(record: AccountingRecord) -> tuple[bool, bool]:
+    """Return reference/entity presence flags for candidate-availability checks."""
     return (record.reference is not None, record.entity is not None)
 
 
 def _record_fields(record: AccountingRecord) -> tuple[object, ...]:
+    """Return comparable accounting fields without the ID to detect copied negatives."""
     return (
         record.date,
         record.amount,

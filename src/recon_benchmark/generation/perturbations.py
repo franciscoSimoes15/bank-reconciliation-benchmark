@@ -33,6 +33,12 @@ def apply_perturbation(
     rng: random.Random,
     scenario_index: int,
 ) -> tuple[BankTransaction, tuple[str, ...]]:
+    """Return the scenario's bank record and descriptive tags of applied changes.
+
+    Natural variation returns the input with no tags. Experimental variants create
+    replacement records and reject no-ops. scenario_index rotates the removable
+    field in missing-information cases; RNG controls randomized variants.
+    """
     if scenario is Scenario.NATURAL_VARIATION:
         return transaction, ()
     if scenario is Scenario.AMOUNT_VARIATION:
@@ -53,6 +59,11 @@ def apply_perturbation(
 
 
 def perturb_reference(reference: str, operation: str, rng: random.Random) -> str:
+    """Apply a named separator, compaction, digit-swap or substitution operation.
+
+    This low-level helper can return unchanged text; the scenario wrapper filters
+    such alternatives before declaring a perturbation.
+    """
     if operation == "separators":
         separated = re.sub(r"[\s/._-]+", ".", reference).strip(".")
         if separated == reference:
@@ -95,6 +106,7 @@ def _amount_variation(
     transaction: BankTransaction,
     rng: random.Random,
 ) -> tuple[BankTransaction, tuple[str, ...]]:
+    """Change the amount by a nonzero fixed or proportional delta and record its tag."""
     relative_delta = normalize_amount(max(Decimal("0.01"), abs(transaction.amount) * Decimal("0.005")))
     deltas = (*_FIXED_AMOUNT_DELTAS, -relative_delta, relative_delta)
     delta = rng.choice(tuple(item for item in deltas if item != Decimal("0.00")))
@@ -106,6 +118,7 @@ def _date_variation(
     transaction: BankTransaction,
     rng: random.Random,
 ) -> tuple[BankTransaction, tuple[str, ...]]:
+    """Shift the posting date by a configured nonzero drift and record the day offset."""
     days = rng.choice(_DATE_DRIFTS)
     changed = replace(transaction, date=transaction.date + timedelta(days=days))
     return _checked(transaction, changed, f"date:{days:+d}d")
@@ -115,6 +128,10 @@ def _reference_variation(
     transaction: BankTransaction,
     rng: random.Random,
 ) -> tuple[BankTransaction, tuple[str, ...]]:
+    """Choose an effective reference edit, or add a bank trace when reference is absent.
+
+    Only alternatives that change the raw value are eligible for selection.
+    """
     if transaction.reference is None:
         trace_reference = f"TRACE-{rng.randrange(100_000_000):08d}"
         changed = replace(transaction, reference=trace_reference)
@@ -137,6 +154,10 @@ def _entity_variation(
     transaction: BankTransaction,
     rng: random.Random,
 ) -> tuple[BankTransaction, tuple[str, ...]]:
+    """Alter counterparty spelling or presentation, adding a bank label if absent.
+
+    Choose from effective suffix, truncation, typo and case/accent alternatives.
+    """
     if transaction.counterparty is None:
         changed = replace(transaction, counterparty="ENTIDADE NAO IDENTIFICADA")
         return _checked(transaction, changed, "entity:add_bank_label")
@@ -165,6 +186,11 @@ def _description_variation(
     transaction: BankTransaction,
     rng: random.Random,
 ) -> tuple[BankTransaction, tuple[str, ...]]:
+    """Choose an effective description edit while keeping a plausible bank narrative.
+
+    Alternatives reorder or remove words, truncate text, add boilerplate or
+    abbreviate known terms; return the changed record and operation tag.
+    """
     value = transaction.description
     tokens = value.split()
     alternatives: list[tuple[str, str]] = []
@@ -203,6 +229,10 @@ def _missing_information(
     transaction: BankTransaction,
     scenario_index: int,
 ) -> tuple[BankTransaction, tuple[str, ...]]:
+    """Remove one available optional bank field, rotating the choice by index.
+
+    Raise PerturbationNoOpError if neither reference nor counterparty can be removed.
+    """
     alternatives: list[tuple[str, BankTransaction]] = []
     if transaction.reference is not None:
         alternatives.append(("missing:reference", replace(transaction, reference=None)))
@@ -218,6 +248,11 @@ def _combined_variation(
     transaction: BankTransaction,
     rng: random.Random,
 ) -> tuple[BankTransaction, tuple[str, ...]]:
+    """Apply three distinct randomly selected perturbation families in sequence.
+
+    Select from amount, date, reference, entity and description, then return the
+    final record with exactly three tags. Missing removal is not a combined family.
+    """
     families = rng.sample(("amount", "date", "reference", "entity", "description"), k=3)
     current = transaction
     tags: list[str] = []
@@ -243,12 +278,17 @@ def _checked(
     changed: BankTransaction,
     tag: str,
 ) -> tuple[BankTransaction, tuple[str, ...]]:
+    """Return a changed record and its tag, raising if it equals the original record."""
     if changed == original:
         raise PerturbationNoOpError(f"Perturbação no-op detetada: {tag}")
     return changed, (tag,)
 
 
 def _transpose_word_character(value: str, rng: random.Random) -> str:
+    """Create a typo by swapping unequal adjacent characters in a sufficiently long word.
+
+    Append X if no suitable word or character pair exists, ensuring a raw change.
+    """
     words = value.split()
     candidates = [index for index, word in enumerate(words) if len(word) >= 4]
     if not candidates:

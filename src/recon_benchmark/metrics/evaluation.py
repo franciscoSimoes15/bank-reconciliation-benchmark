@@ -19,6 +19,12 @@ def evaluate_case(
     config: ExperimentConfig,
 ) -> CaseEvaluation:
     # Only the two observable records cross the matcher boundary.
+    """Score all candidates, then use ground truth to measure one method's ranking.
+
+    Pass only observable records to score_pair and reject unequal compared-field
+    counts. Return true average rank, reciprocal rank, unique-top status and top-tie
+    count, using config.tie_epsilon when comparing scores.
+    """
     scored = tuple(
         CandidateScore(
             candidate=candidate.record,
@@ -77,6 +83,10 @@ def evaluate_cases(
     methods: Iterable[MatchingMethod],
     config: ExperimentConfig,
 ) -> tuple[CaseEvaluation, ...]:
+    """Evaluate every case-method combination, preserving case and method iteration order.
+
+    Validate method membership and return one CaseEvaluation for each combination.
+    """
     method_list = tuple(methods)
     unknown = set(method_list) - set(METHODS)
     if unknown:
@@ -94,6 +104,12 @@ def average_rank(
     *,
     epsilon: float = 1e-12,
 ) -> float:
+    """Return the target score's one-based position, averaging positions occupied by ties.
+
+    Scores within absolute epsilon of the target count as equal. For example,
+    two candidates tied at the top each receive rank 1.5. Raise ValueError when
+    no score matches the target under that tolerance.
+    """
     score_list = list(scores)
     better = sum(
         score > target_score and not _same_score(score, target_score, epsilon)
@@ -110,6 +126,11 @@ def average_rank(
 def aggregate_by_seed_scenario(
     evaluations: Iterable[CaseEvaluation],
 ) -> tuple[AggregateMetrics, ...]:
+    """Compute Unique Top-1, MRR and Tie Rate separately for each seed/scenario/method.
+
+    Average the per-case indicators and reciprocal ranks; cross-seed standard
+    deviations are calculated later by reporting.
+    """
     groups: dict[tuple[int, MatchingMethod, Scenario], list[CaseEvaluation]] = {}
     for evaluation in evaluations:
         key = (evaluation.seed, evaluation.method, evaluation.scenario)
@@ -137,6 +158,10 @@ def aggregate_by_seed_scenario(
 def aggregate_overall_by_seed(
     evaluations: Iterable[CaseEvaluation],
 ) -> tuple[AggregateMetrics, ...]:
+    """Pool scenarios within each seed/method and average the per-case metrics.
+
+    Mark scenario as None so reporting can distinguish overall and scenario results.
+    """
     groups: dict[tuple[int, MatchingMethod], list[CaseEvaluation]] = {}
     for evaluation in evaluations:
         groups.setdefault((evaluation.seed, evaluation.method), []).append(evaluation)
@@ -161,4 +186,5 @@ def aggregate_overall_by_seed(
 
 
 def _same_score(left: float, right: float, epsilon: float) -> bool:
+    """Compare scores using only the absolute tie tolerance, with no relative tolerance."""
     return math.isclose(left, right, rel_tol=0.0, abs_tol=epsilon)

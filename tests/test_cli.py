@@ -15,6 +15,7 @@ from recon_benchmark.storage.serialization import read_jsonl
 
 @pytest.mark.parametrize("module", ["recon_benchmark", "recon_benchmark.cli"])
 def test_module_entry_points_keep_existing_commands(module: str) -> None:
+    """Verify both python -m entry points expose all six commands without import warnings."""
     source = Path(__file__).resolve().parents[1] / "src"
     completed = subprocess.run(
         [sys.executable, "-m", module, "--help"],
@@ -29,6 +30,9 @@ def test_module_entry_points_keep_existing_commands(module: str) -> None:
 
 
 def test_cli_generates_validates_explains_and_evaluates(tmp_path: Path) -> None:
+    """Exercise artifact-producing CLI commands in a temporary directory and compare demo/explain
+    traces.
+    """
     benchmark = tmp_path / "benchmark.jsonl"
     assert main([
         "generate", "--cases-per-scenario", "1", "--output", str(benchmark),
@@ -63,12 +67,16 @@ def test_cli_generates_validates_explains_and_evaluates(tmp_path: Path) -> None:
 def test_run_final_passes_frozen_configuration_to_pipeline(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Check final-run dispatch uses configured seeds, case count and methods without running the
+    full study.
+    """
     calls = 0
 
     def run_experiment(
         *, seeds: Iterable[int], cases_per_scenario: int,
         methods: Iterable[MatchingMethod], config: ExperimentConfig, root: str | Path,
     ) -> dict[str, Path]:
+        """Capture pipeline arguments and assert the CLI preserved the final experiment settings."""
         nonlocal calls
         calls += 1
         assert tuple(seeds) == config.evaluation_seeds == (42, 43, 44, 45, 46)

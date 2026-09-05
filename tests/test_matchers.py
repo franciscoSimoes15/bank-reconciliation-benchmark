@@ -18,6 +18,7 @@ from recon_benchmark.ranking.similarity import jaro_winkler_similarity
 
 @pytest.fixture
 def pair() -> tuple[BankTransaction, AccountingRecord]:
+    """Provide equivalent bank/accounting evidence with realistic differences in text formatting."""
     transaction = BankTransaction(
         id="B1",
         date=date(2026, 5, 12),
@@ -38,6 +39,7 @@ def pair() -> tuple[BankTransaction, AccountingRecord]:
 
 
 def test_methods_use_descriptive_strenum_names_and_output_codes() -> None:
+    """Check descriptive method identifiers map to the intended M0-M4 and ablation output labels."""
     assert METHODS == tuple(MatchingMethod)
     assert [method_code(method) for method in METHODS] == [
         "M0",
@@ -51,6 +53,7 @@ def test_methods_use_descriptive_strenum_names_and_output_codes() -> None:
 
 
 def test_all_scores_stay_in_range(pair: tuple[BankTransaction, AccountingRecord]) -> None:
+    """Verify every configured method returns bounded total and per-field compatibility scores."""
     config = ExperimentConfig()
     transaction, candidate = pair
     for method in METHODS:
@@ -62,6 +65,7 @@ def test_all_scores_stay_in_range(pair: tuple[BankTransaction, AccountingRecord]
 def test_normalized_exact_uses_field_normalization(
     pair: tuple[BankTransaction, AccountingRecord],
 ) -> None:
+    """Check formatting differences disappear before normalized-exact comparisons are aggregated."""
     transaction, candidate = pair
     result = score_pair(
         transaction,
@@ -75,6 +79,7 @@ def test_normalized_exact_uses_field_normalization(
 def test_tolerant_deterministic_uses_binary_amount_and_date_rules(
     pair: tuple[BankTransaction, AccountingRecord],
 ) -> None:
+    """Verify tolerance boundaries are inclusive and values just beyond them receive zero."""
     transaction, candidate = pair
     config = ExperimentConfig()
     at_threshold = replace(
@@ -118,6 +123,9 @@ def test_ranking_methods_use_gradual_amount_and_date_proximity(
     pair: tuple[BankTransaction, AccountingRecord],
     method: MatchingMethod,
 ) -> None:
+    """Require progressively lower numeric/date scores as a candidate moves farther from exact
+    evidence.
+    """
     transaction, candidate = pair
     near = replace(
         transaction,
@@ -137,6 +145,7 @@ def test_ranking_methods_use_gradual_amount_and_date_proximity(
 
 
 def test_field_aware_reference_comparison_penalizes_document_number_conflict() -> None:
+    """Ensure shared prefix and year cannot overwhelm a conflicting document number."""
     left = "ft202600187"
     wrong_number = "ft202600188"
     assert structured_reference_similarity(left, wrong_number) == pytest.approx(0.30)
@@ -148,6 +157,9 @@ def test_field_aware_reference_comparison_penalizes_document_number_conflict() -
 def test_missing_field_is_excluded_and_counted(
     pair: tuple[BankTransaction, AccountingRecord],
 ) -> None:
+    """Check missing reference/entity fields are omitted and the total uses only compared
+    evidence.
+    """
     transaction, candidate = pair
     result = score_pair(
         replace(transaction, reference=None, counterparty=None),
@@ -165,6 +177,9 @@ def test_missing_field_is_excluded_and_counted(
 def test_missing_optional_fields_cannot_cause_division_by_zero(
     pair: tuple[BankTransaction, AccountingRecord],
 ) -> None:
+    """Verify scoring remains defined when optional evidence and the ablated description are
+    unavailable.
+    """
     transaction, candidate = pair
     result = score_pair(
         replace(transaction, reference=None, counterparty=None),
@@ -179,6 +194,9 @@ def test_missing_optional_fields_cannot_cause_division_by_zero(
 def test_field_aware_ablation_excludes_description(
     pair: tuple[BankTransaction, AccountingRecord],
 ) -> None:
+    """Check the description ablation records exclusion and removes description from score
+    contributions.
+    """
     transaction, candidate = pair
     result = score_pair(
         transaction,
@@ -191,6 +209,9 @@ def test_field_aware_ablation_excludes_description(
 
 
 def test_matcher_signature_cannot_receive_ground_truth_or_generator_metadata() -> None:
+    """Guard the scoring API against label leakage by checking its allowed and forbidden
+    parameters.
+    """
     parameters = set(inspect.signature(score_pair).parameters)
     forbidden = {
         "event_id",

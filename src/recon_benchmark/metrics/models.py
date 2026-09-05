@@ -9,6 +9,13 @@ from recon_benchmark.domain.models import MatchingMethod, Scenario
 
 @dataclass(frozen=True, slots=True)
 class CaseEvaluation:
+    """Evaluation evidence for one case and one matching method.
+
+    Store the true candidate's score, average rank, reciprocal rank and field details.
+    unique_top1 is 0 or 1; top_tie_count counts candidates tied for the maximum.
+    predicted_candidate_id is None when the top position is ambiguous.
+    Ground-truth metadata here is used after scoring.
+    """
     seed: int
     case_id: str
     scenario: Scenario
@@ -28,6 +35,12 @@ class CaseEvaluation:
 
 @dataclass(frozen=True, slots=True)
 class AggregateMetrics:
+    """Mean ranking performance for a method within a single seed.
+
+    scenario=None denotes all scenarios pooled for that seed. cases is the group
+    size; unique_top1 and tie_rate are proportions, and mrr is the mean reciprocal
+    rank. Aggregation across evaluation seeds happens in reporting.
+    """
     seed: int
     method: MatchingMethod
     scenario: Scenario | None

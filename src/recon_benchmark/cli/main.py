@@ -16,6 +16,11 @@ from recon_benchmark.storage.serialization import read_jsonl, write_jsonl
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Declare the CLI's global configuration option, six subcommands and their arguments.
+
+    Return an ArgumentParser that supplies defaults, validates basic argument syntax
+    and generates help text; parsing and command execution happen in main().
+    """
     parser = argparse.ArgumentParser(
         prog="recon-benchmark",
         description="Benchmark sintético de ranking 1:1 para reconciliação bancária.",
@@ -81,6 +86,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Parse arguments and dispatch generation, validation, evaluation or explanation.
+
+    argv=None reads the process arguments; a supplied sequence supports programmatic
+    calls and tests. Successful commands return 0, handled execution errors return 1,
+    and argparse handles usage errors with exit code 2. Commands may write artifacts.
+    """
     parser = build_parser()
     args = parser.parse_args(argv)
     config = _load_cli_config(args.config)
@@ -180,11 +191,20 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _load_cli_config(path: str) -> ExperimentConfig:
+    """Load the requested configuration, falling back to defaults if the path is absent.
+
+    This CLI-specific fallback also applies to a misspelled path; load_config itself
+    does not silently ignore a supplied file that cannot be read.
+    """
     config_path = Path(path)
     return load_config(config_path if config_path.exists() else None)
 
 
 def _parse_methods(values: Sequence[str]) -> tuple[MatchingMethod, ...]:
+    """Expand the standalone all option or convert descriptive names to method enums.
+
+    Unknown names raise ValueError; output codes such as M4 are not accepted here.
+    """
     if list(values) == ["all"]:
         return METHODS
     try:
@@ -194,6 +214,7 @@ def _parse_methods(values: Sequence[str]) -> tuple[MatchingMethod, ...]:
 
 
 def _print_outputs(outputs: dict[str, Path]) -> None:
+    """Print each artifact name and path returned by the experiment pipeline."""
     for name, path in outputs.items():
         print(f"{name}: {path}")
 

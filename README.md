@@ -213,6 +213,12 @@ processamento ficam nos restantes módulos. Métodos próprios dos objetos, como
 Por exemplo, `ranking/models.py` define `ScoreBreakdown`, enquanto
 `ranking/matchers.py` contém a função `score_pair()` que calcula esse resultado.
 
+Cada classe, método e função tem uma docstring em inglês que explica o seu papel.
+As operações principais documentam também entradas/saídas relevantes, efeitos de
+I/O e regras como missing, empates ou proteção do ground truth. As funções de
+teste descrevem o comportamento que verificam. Estas descrições aparecem no
+editor ao consultar um símbolo e podem ser lidas com `help()` no Python.
+
 ## Limites
 
 O benchmark não cobre 1:N, N:1, N:N, ausência do candidato verdadeiro, fees/FX/partial payments como relações complexas, integração ERP ou calibração de auto-reconciliação. Resultados sintéticos não demonstram desempenho em produção.

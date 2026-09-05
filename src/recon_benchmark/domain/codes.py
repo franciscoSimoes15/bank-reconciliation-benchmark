@@ -27,8 +27,10 @@ _SCENARIO_CODES: Mapping[Scenario, str] = {
 
 
 def method_code(method: MatchingMethod) -> str:
+    """Return the publication/output code for a descriptive matching method."""
     return _METHOD_CODES[method]
 
 
 def scenario_code(scenario: Scenario) -> str:
+    """Return the P0-P7 output code for an experimental scenario."""
     return _SCENARIO_CODES[scenario]

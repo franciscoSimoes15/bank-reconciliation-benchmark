@@ -26,6 +26,11 @@ from recon_benchmark.domain.codes import method_code, scenario_code
 
 
 def write_per_case_csv(evaluations: Iterable[CaseEvaluation], path: str | Path) -> Path:
+    """Write one CSV row per case-method result with ranks, scores and missing-field details.
+
+    Include labels for auditing after scoring; create parent folders and return the
+    output path, replacing an existing file.
+    """
     output = _prepare_path(path)
     fieldnames = [
         "seed",
@@ -75,6 +80,7 @@ def write_per_case_csv(evaluations: Iterable[CaseEvaluation], path: str | Path) 
 
 
 def write_aggregate_csv(metrics: Iterable[AggregateMetrics], path: str | Path) -> Path:
+    """Write per-seed aggregate metrics with descriptive names and publication codes."""
     output = _prepare_path(path)
     fieldnames = [
         "seed",
@@ -96,6 +102,11 @@ def write_aggregate_csv(metrics: Iterable[AggregateMetrics], path: str | Path) -
 
 
 def write_summary_csv(metrics: Iterable[AggregateMetrics], path: str | Path) -> Path:
+    """Group per-seed metrics by method/scenario and write their mean and sample deviation.
+
+    Each seed contributes one supplied aggregate. Overall groups retain scenario=None;
+    a single seed has a reported deviation of zero.
+    """
     output = _prepare_path(path)
     groups: dict[tuple[MatchingMethod, Scenario | None], list[AggregateMetrics]] = defaultdict(list)
     for metric in metrics:
@@ -152,6 +163,12 @@ def write_manifest(
     methods: list[MatchingMethod],
     path: str | Path,
 ) -> Path:
+    """Write the configuration, effective run and provenance needed to inspect a run.
+
+    Record supplied benchmark hashes, Python/dependency versions, UTC timestamp,
+    available Git state and a recursive source hash. Effective run parameters are
+    recorded separately because development commands can override config defaults.
+    """
     output = _prepare_path(path)
     project_root = Path(__file__).resolve().parents[3]
     manifest: dict[str, object] = {
@@ -196,6 +213,11 @@ def write_markdown_report(
     summary_csv: str | Path,
     path: str | Path,
 ) -> Path:
+    """Render summary CSV metrics as a Markdown report with global and scenario tables.
+
+    Show the description ablation globally but keep the scenario comparison to the
+    five primary methods. Write the report and return its path.
+    """
     rows = _read_csv(summary_csv)
     overall = [row for row in rows if row["scenario"] == "ALL"]
     scenarios = sorted(
@@ -264,6 +286,11 @@ def write_markdown_report(
 
 
 def create_robustness_figure(summary_csv: str | Path, path: str | Path) -> Path:
+    """Plot mean Unique Top-1 across scenarios for the five primary methods.
+
+    Read summary CSV rows, exclude overall/ablation rows, save the figure at path
+    and close it so batch runs do not retain plotting resources.
+    """
     rows = [
         row
         for row in _read_csv(summary_csv)
@@ -302,6 +329,7 @@ def create_robustness_figure(summary_csv: str | Path, path: str | Path) -> Path:
 
 
 def _aggregate_row(metric: AggregateMetrics) -> dict[str, object]:
+    """Convert one per-seed aggregate into a CSV row with stable names and numeric formatting."""
     return {
         "seed": metric.seed,
         "method": metric.method.value,
@@ -316,43 +344,56 @@ def _aggregate_row(metric: AggregateMetrics) -> dict[str, object]:
 
 
 def _scenario_value(scenario: Scenario | None) -> str:
+    """Return a descriptive scenario name, using ALL for pooled results."""
     return "ALL" if scenario is None else scenario.value
 
 
 def _scenario_output_code(scenario: Scenario | None) -> str:
+    """Return the scenario's publication code, using ALL for pooled results."""
     return "ALL" if scenario is None else scenario_code(scenario)
 
 
 def _prepare_path(path: str | Path) -> Path:
+    """Create missing parent directories and return a Path without writing the file itself."""
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     return output
 
 
 def _sample_std(values: Iterable[float]) -> float:
+    """Compute sample standard deviation with n-1 denominator, or zero for fewer than two values."""
     items = list(values)
     return statistics.stdev(items) if len(items) > 1 else 0.0
 
 
 def _read_csv(path: str | Path) -> list[dict[str, str]]:
+    """Read a UTF-8 CSV into dictionaries keyed by its header names."""
     with Path(path).open("r", encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))
 
 
 def _pct(value: str) -> str:
+    """Format a stored proportion as a percentage with two decimal places."""
     return f"{float(value) * 100:.2f}%"
 
 
 def _decimal(value: str) -> str:
+    """Format a stored metric as a decimal with four places for the Markdown report."""
     return f"{float(value):.4f}"
 
 
 def _module_version(module_name: str) -> str:
+    """Import a dependency and read its version, using unknown when that attribute is absent."""
     module = __import__(module_name)
     return str(getattr(module, "__version__", "unknown"))
 
 
 def _source_tree_digest(root: Path) -> str:
+    """Hash project settings and all nested package sources in a stable path order.
+
+    Include relative filenames and file bytes, so both code edits and module moves
+    change the digest. Skip missing files and exclude generated result artifacts.
+    """
     digest = hashlib.sha256()
     candidates = [
         root / "pyproject.toml",
@@ -371,6 +412,7 @@ def _source_tree_digest(root: Path) -> str:
 
 
 def _git_commit(start_path: Path) -> str | None:
+    """Read the current Git commit from the given directory, or None when unavailable."""
     try:
         completed = subprocess.run(
             ["git", "rev-parse", "HEAD"],
@@ -386,6 +428,7 @@ def _git_commit(start_path: Path) -> str | None:
 
 
 def _git_worktree_dirty(start_path: Path) -> bool | None:
+    """Report whether Git sees local changes, or None if Git cannot be queried."""
     try:
         completed = subprocess.run(
             ["git", "status", "--porcelain"],

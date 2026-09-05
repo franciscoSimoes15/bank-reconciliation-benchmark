@@ -88,6 +88,12 @@ def generate_financial_event(
     index: int,
     event_id: str,
 ) -> FinancialEvent:
+    """Create one latent occurrence using synthetic facts and an explicit RNG.
+
+    seed and index cycle through operation families and determine the document
+    sequence. The family controls amount range, sign and optional fields; dates
+    and entity combinations come from rng. No source record is used as input.
+    """
     operation_type = _OPERATION_TYPES[(index + seed) % len(_OPERATION_TYPES)]
     event_date = _BASE_DATE + timedelta(days=rng.randrange(180))
     minimum, maximum = _AMOUNT_RANGES_CENTS[operation_type]
@@ -122,6 +128,10 @@ def generate_financial_event(
 
 
 def generate_entity_names(rng: random.Random, index: int) -> tuple[str, str]:
+    """Build a synthetic legal entity name and a shorter bank-facing alias.
+
+    Use generated word families and the supplied RNG/index, not real customer data.
+    """
     prefix = _ENTITY_PREFIXES[(index + rng.randrange(len(_ENTITY_PREFIXES))) % len(_ENTITY_PREFIXES)]
     domain = _ENTITY_DOMAINS[(index * 3 + rng.randrange(len(_ENTITY_DOMAINS))) % len(_ENTITY_DOMAINS)]
     suffix = _LEGAL_SUFFIXES[(index + rng.randrange(len(_LEGAL_SUFFIXES))) % len(_LEGAL_SUFFIXES)]
@@ -136,6 +146,12 @@ def render_bank_transaction(
     *,
     transaction_id: str,
 ) -> BankTransaction:
+    """Render a bank-side view directly from a FinancialEvent.
+
+    Use the bank alias, bank templates and a sampled posting delay. References
+    follow bank conventions; bank-fee counterparties use a generic institution
+    label. Accounting records are never read by this renderer.
+    """
     posting_delay = rng.choice((0, 0, 1, 2))
     reference = _render_bank_reference(event.document_reference, rng)
     counterparty = (
@@ -160,6 +176,11 @@ def render_accounting_record(
     *,
     record_id: str,
 ) -> AccountingRecord:
+    """Render an accounting-side view directly from a FinancialEvent.
+
+    Use the event date, legal entity and accounting templates with the supplied
+    RNG. The bank representation is not copied or consulted.
+    """
     reference = _render_accounting_reference(event.document_reference, rng)
     description = rng.choice(ACCOUNTING_DESCRIPTIONS[event.operation_type])
     return AccountingRecord(
@@ -173,6 +194,11 @@ def render_accounting_record(
 
 
 def near_document_reference(reference: str | None, offset: int) -> str | None:
+    """Shift the document number while preserving its prefix, year and number width.
+
+    Keep None absent; reject references outside the latent prefix-year-number format.
+    This creates nearby but conflicting documents for controlled hard negatives.
+    """
     if reference is None:
         return None
     match = re.fullmatch(r"([A-Z]+)-(\d{4})-(\d+)", reference)
@@ -183,6 +209,7 @@ def near_document_reference(reference: str | None, offset: int) -> str | None:
 
 
 def _render_bank_reference(reference: str | None, rng: random.Random) -> str | None:
+    """Format a latent document reference with a sampled bank convention, preserving None."""
     if reference is None:
         return None
     prefix, year, number = reference.split("-")
@@ -194,6 +221,7 @@ def _render_bank_reference(reference: str | None, rng: random.Random) -> str | N
 
 
 def _render_accounting_reference(reference: str | None, rng: random.Random) -> str | None:
+    """Format a latent reference with accounting conventions independently of the bank."""
     if reference is None:
         return None
     prefix, year, number = reference.split("-")

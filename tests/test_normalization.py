@@ -10,19 +10,23 @@ from recon_benchmark.normalization.fields import (
 
 
 def test_normalize_text_removes_accents_punctuation_and_extra_spaces() -> None:
+    """Check a formatted entity string becomes the expected normalized token sequence."""
     assert normalize_text("  Órbita & Filhos,  Lda. ") == "orbita filhos lda"
 
 
 def test_normalize_reference_compacts_separators() -> None:
+    """Verify reference separators do not survive into the compact comparison value."""
     assert normalize_reference("FT-2026 / 00187") == "ft202600187"
 
 
 def test_normalize_entity_removes_only_generated_legal_suffixes() -> None:
+    """Check generated LDA and SA legal-form tokens are removed from normalized entity names."""
     assert normalize_entity("ÓRBITA SERVIÇOS LDA") == "orbita servicos"
     assert normalize_entity("NOVA SA") == "nova"
 
 
 def test_normalizers_preserve_missing() -> None:
+    """Ensure absent textual evidence remains None through every text normalizer."""
     assert normalize_text(None) is None
     assert normalize_reference(None) is None
     assert normalize_entity(None) is None
@@ -30,4 +34,5 @@ def test_normalizers_preserve_missing() -> None:
 
 
 def test_normalize_amount_uses_two_decimal_places() -> None:
+    """Verify monetary rounding uses cents and rounds a half-cent upward."""
     assert normalize_amount(Decimal("12.345")) == Decimal("12.35")

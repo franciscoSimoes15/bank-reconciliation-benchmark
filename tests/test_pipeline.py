@@ -11,6 +11,9 @@ from recon_benchmark.metrics.reporting import _source_tree_digest
 
 
 def test_small_pipeline_writes_and_validates_all_required_outputs(tmp_path: Path) -> None:
+    """Run a small experiment and verify artifacts, benchmark invariants, metric dimensions and
+    manifest provenance.
+    """
     config = ExperimentConfig()
     methods = (
         MatchingMethod.NORMALIZED_EXACT,
@@ -72,6 +75,7 @@ def test_small_pipeline_writes_and_validates_all_required_outputs(tmp_path: Path
 
 
 def test_source_digest_includes_nested_modules_and_templates(tmp_path: Path) -> None:
+    """Check nested template edits change the source hash while unrelated report outputs do not."""
     source = tmp_path / "src" / "recon_benchmark"
     templates = source / "templates"
     templates.mkdir(parents=True)
@@ -86,5 +90,6 @@ def test_source_digest_includes_nested_modules_and_templates(tmp_path: Path) -> 
 
 
 def _csv_rows(path: Path) -> list[dict[str, str]]:
+    """Read generated CSV rows as dictionaries for pipeline-output assertions."""
     with path.open("r", encoding="utf-8", newline="") as handle:
         return list(csv.DictReader(handle))

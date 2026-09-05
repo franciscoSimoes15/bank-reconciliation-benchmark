@@ -21,6 +21,12 @@ def explain_case(
     method: MatchingMethod,
     config: ExperimentConfig,
 ) -> str:
+    """Build a Markdown trace of one case scored with the selected method.
+
+    Show raw/normalized bank fields, candidate scores, excluded fields and ranking.
+    Truth is added only as an annotation after scoring, never passed to the matcher.
+    Displayed row numbers are visual order, not average ranks for metric ties.
+    """
     scored = tuple(
         CandidateScore(
             candidate=candidate.record,
@@ -104,6 +110,10 @@ def write_case_explanation(
     config: ExperimentConfig,
     output: str | Path,
 ) -> Path:
+    """Write a case's Markdown scoring trace, creating parent directories as needed.
+
+    Return the path and replace existing content at that destination.
+    """
     path = Path(output)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(explain_case(case, method=method, config=config), encoding="utf-8")
@@ -111,11 +121,13 @@ def write_case_explanation(
 
 
 def _field_score(scores: dict[str, float], field: str) -> str:
+    """Format a field's compatibility for the trace, using a dash for excluded fields."""
     value = scores.get(field)
     return "—" if value is None else f"{value:.4f}"
 
 
 def _display(value: object) -> str:
+    """Render absent values as an empty-set symbol and escape Markdown table separators."""
     if value is None:
         return "∅"
     return str(value).replace("|", "\\|")

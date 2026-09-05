@@ -21,6 +21,9 @@ from recon_benchmark.generation.synthetic_data import (
 
 
 def test_financial_event_has_two_independent_renderers() -> None:
+    """Check operation coverage, naturally missing fields and distinct bank/accounting
+    descriptions.
+    """
     events = tuple(
         generate_financial_event(
             random.Random(index),
@@ -52,6 +55,9 @@ def test_financial_event_has_two_independent_renderers() -> None:
 
 
 def test_generator_creates_paired_scenarios_and_exact_candidate_composition() -> None:
+    """Verify scenario counts, 1+6+3 composition, hard-negative families and independent natural
+    origins.
+    """
     config = ExperimentConfig()
     cases = generate_benchmark(seed=7, cases_per_scenario=2, config=config)
     assert len(cases) == 16
@@ -76,6 +82,7 @@ def test_generator_creates_paired_scenarios_and_exact_candidate_composition() ->
 
 
 def test_same_event_and_candidate_set_are_reused_across_scenarios() -> None:
+    """Ensure paired variants share the identical candidate tuple and true-candidate identity."""
     cases = generate_benchmark(seed=7, cases_per_scenario=3, config=ExperimentConfig())
     grouped: dict[str, list[BenchmarkCase]] = defaultdict(list)
     for case in cases:
@@ -89,6 +96,9 @@ def test_same_event_and_candidate_set_are_reused_across_scenarios() -> None:
 
 
 def test_every_declared_perturbation_changes_its_field() -> None:
+    """Compare each variant to its natural baseline so changed fields exactly match declared
+    tags.
+    """
     cases = generate_benchmark(seed=7, cases_per_scenario=12, config=ExperimentConfig())
     grouped: dict[str, list[BenchmarkCase]] = defaultdict(list)
     for case in cases:
@@ -130,6 +140,9 @@ def test_every_declared_perturbation_changes_its_field() -> None:
 
 
 def test_generator_is_reproducible_and_seed_sensitive() -> None:
+    """Check that identical seeds reproduce cases and a different seed changes the generated
+    data.
+    """
     config = ExperimentConfig()
     first = generate_benchmark(seed=7, cases_per_scenario=2, config=config)
     repeated = generate_benchmark(seed=7, cases_per_scenario=2, config=config)
@@ -139,6 +152,7 @@ def test_generator_is_reproducible_and_seed_sensitive() -> None:
 
 
 def test_candidate_ids_are_opaque_and_do_not_encode_origin() -> None:
+    """Check candidate IDs share one opaque format without readable truth or origin markers."""
     cases = generate_benchmark(seed=7, cases_per_scenario=1, config=ExperimentConfig())
     case = cases[0]
     candidate_ids = [candidate.record.id for candidate in case.candidates]
@@ -154,6 +168,9 @@ def test_candidate_ids_are_opaque_and_do_not_encode_origin() -> None:
 
 
 def test_controlled_hard_negatives_guarantee_declared_conflicts() -> None:
+    """Verify each hard-negative family preserves intended evidence while conflicting with the
+    true document.
+    """
     case = generate_benchmark(seed=7, cases_per_scenario=1, config=ExperimentConfig())[0]
     true_record = case.true_candidate()
     hard = {
@@ -179,6 +196,7 @@ def test_controlled_hard_negatives_guarantee_declared_conflicts() -> None:
 
 
 def _transaction_fields(transaction: BankTransaction) -> dict[str, object]:
+    """Collect observable bank fields so perturbation tests can identify exactly what changed."""
     return {
         "amount": transaction.amount,
         "date": transaction.date,

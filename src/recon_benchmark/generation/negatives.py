@@ -27,6 +27,12 @@ def select_natural_negatives(
     rng: random.Random,
     count: int,
 ) -> tuple[BenchmarkCandidate, ...]:
+    """Sample other ledger events as plausible, coherent incorrect candidates.
+
+    Require the true record's reference/entity availability pattern. Rank eligible
+    records by sign, relative amount gap and date gap, then sample count records
+    from a nearby pool with the supplied RNG. An insufficient pool raises.
+    """
     availability = _availability_pattern(true_entry.record)
     eligible = [
         entry
@@ -58,6 +64,12 @@ def build_controlled_hard_negatives(
     *,
     rng: random.Random,
 ) -> tuple[BenchmarkCandidate, ...]:
+    """Render three distinct events with controlled conflicts against the true entry.
+
+    Preserve selected evidence such as amount, date or entity while changing other
+    facts. Use only latent/ledger data and supplied identities; scenario and the
+    perturbed bank transaction cannot influence these candidates.
+    """
     true_event = true_entry.event
     alternative_legal, alternative_alias = _alternative_entity(
         true_event,
@@ -125,6 +137,10 @@ def _alternative_entity(
     rng: random.Random,
     start_index: int,
 ) -> tuple[str | None, str | None]:
+    """Find a different generated legal name and alias, preserving bank-fee missingness.
+
+    Try up to 100 entity combinations before reporting failure.
+    """
     if event.operation_type is OperationType.BANK_FEE:
         return None, None
     for offset in range(100):
@@ -141,6 +157,11 @@ def _render_distinct_record(
     *,
     record_id: str,
 ) -> AccountingRecord:
+    """Render a hard-negative event without duplicating all true matching fields.
+
+    Retry accounting renderings first. If all attempts collide, add a coherent
+    alternative description label, then verify the record is distinct.
+    """
     for _ in range(20):
         render_rng = random.Random(rng.getrandbits(64))
         record = render_accounting_record(event, render_rng, record_id=record_id)
@@ -158,6 +179,7 @@ def _render_distinct_record(
 
 
 def _availability_pattern(record: AccountingRecord) -> tuple[bool, bool]:
+    """Return optional-field presence flags used to keep natural negatives comparable."""
     return (record.reference is not None, record.entity is not None)
 
 
@@ -165,6 +187,11 @@ def _retrieval_key(
     true_record: AccountingRecord,
     candidate: AccountingRecord,
 ) -> tuple[int, float, int, str]:
+    """Order ledger candidates by sign agreement, relative amount gap, date gap and ID.
+
+    This selects a plausible negative pool during generation; it is not a method
+    being evaluated and never uses the experimentally perturbed bank record.
+    """
     sign_mismatch = int((true_record.amount < 0) != (candidate.amount < 0))
     denominator = max(abs(true_record.amount), abs(candidate.amount), 1)
     relative_amount_difference = float(abs(true_record.amount - candidate.amount) / denominator)
@@ -173,6 +200,7 @@ def _retrieval_key(
 
 
 def _matching_fields(record: AccountingRecord) -> tuple[object, ...]:
+    """Return observable record fields, excluding identity, for duplicate detection."""
     return (
         record.date,
         record.amount,

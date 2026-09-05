@@ -18,6 +18,7 @@ from recon_benchmark.domain.validation import (
 
 
 class OperationType(StrEnum):
+    """Financial operation families that determine available fields and templates."""
     SUPPLIER_TRANSFER = "supplier_transfer"
     CUSTOMER_RECEIPT = "customer_receipt"
     DIRECT_DEBIT = "direct_debit"
@@ -27,6 +28,11 @@ class OperationType(StrEnum):
 
 
 class Scenario(StrEnum):
+    """Experimental variants of the same event and candidate set.
+
+    Natural variation keeps the independently rendered bank record unchanged;
+    the other variants add controlled changes to that record.
+    """
     NATURAL_VARIATION = "natural_variation"
     AMOUNT_VARIATION = "amount_variation"
     DATE_VARIATION = "date_variation"
@@ -38,6 +44,11 @@ class Scenario(StrEnum):
 
 
 class MatchingMethod(StrEnum):
+    """Transparent scoring strategies selected by descriptive names.
+
+    Short labels such as M0 and M4 are output codes, not method identifiers.
+    FIELD_AWARE_WITHOUT_DESCRIPTION isolates the contribution of description.
+    """
     NORMALIZED_EXACT = "normalized_exact"
     TOLERANT_DETERMINISTIC = "tolerant_deterministic"
     JARO_WINKLER_TEXT = "jaro_winkler_text"
@@ -47,12 +58,17 @@ class MatchingMethod(StrEnum):
 
 
 class CandidateOrigin(StrEnum):
+    """Evaluation-only label distinguishing truth, ledger negatives and hard negatives.
+
+    This label must stay outside the records supplied to the matcher.
+    """
     TRUE = "true"
     NATURAL_NEGATIVE = "natural_negative"
     CONTROLLED_HARD_NEGATIVE = "controlled_hard_negative"
 
 
 class HardNegativeKind(StrEnum):
+    """Controlled conflict families used to construct plausible incorrect candidates."""
     AMOUNT_DATE_NEAR_REFERENCE = "amount_date_near_reference"
     SAME_ENTITY_OTHER_DOCUMENT = "same_entity_other_document"
     MULTI_FIELD_CHALLENGER = "multi_field_challenger"
@@ -60,7 +76,12 @@ class HardNegativeKind(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class FinancialEvent:
-    """Latent event used only while generating the two independent views."""
+    """Underlying financial occurrence from which both source records are rendered.
+
+    The signed amount, event date, legal entity, bank alias and document reference
+    represent shared facts. Optional fields depend on the operation type.
+    The event and its identity are generation metadata, never matcher inputs.
+    """
 
     event_id: str
     operation_type: OperationType
@@ -73,6 +94,11 @@ class FinancialEvent:
 
 @dataclass(frozen=True, slots=True)
 class BankTransaction:
+    """Observable bank-side representation of a financial event.
+
+    Its date may include a posting delay, counterparty uses bank naming conventions,
+    and reference can be absent. No ground-truth or scenario metadata is stored here.
+    """
     id: str
     date: date
     amount: Decimal
@@ -81,6 +107,7 @@ class BankTransaction:
     description: str
 
     def to_dict(self) -> dict[str, object]:
+        """Return a JSON-compatible bank record with ISO date and decimal amount strings."""
         return {
             "id": self.id,
             "date": self.date.isoformat(),
@@ -92,6 +119,7 @@ class BankTransaction:
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, object]) -> BankTransaction:
+        """Reconstruct a bank record from serialized fields, checking required value types."""
         return cls(
             id=_required_string(raw, "id"),
             date=date.fromisoformat(_required_string(raw, "date")),
@@ -104,6 +132,11 @@ class BankTransaction:
 
 @dataclass(frozen=True, slots=True)
 class AccountingRecord:
+    """Observable accounting-side representation and unit of candidate comparison.
+
+    The renderer uses the event date, legal entity name and accounting templates.
+    Reference and entity can be absent; candidate origin is stored separately.
+    """
     id: str
     date: date
     amount: Decimal
@@ -112,6 +145,7 @@ class AccountingRecord:
     description: str
 
     def to_dict(self) -> dict[str, object]:
+        """Return a JSON-compatible accounting record without benchmark metadata."""
         return {
             "id": self.id,
             "date": self.date.isoformat(),
@@ -123,6 +157,7 @@ class AccountingRecord:
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, object]) -> AccountingRecord:
+        """Reconstruct an accounting record, restoring date and Decimal field types."""
         return cls(
             id=_required_string(raw, "id"),
             date=date.fromisoformat(_required_string(raw, "date")),
@@ -135,7 +170,11 @@ class AccountingRecord:
 
 @dataclass(frozen=True, slots=True)
 class BenchmarkCandidate:
-    """Generator/evaluator metadata kept outside the record passed to a matcher."""
+    """Accounting record accompanied by labels for generation and evaluation.
+
+    Origin, source_event_id and hard_negative_kind explain how the candidate was
+    created. Only record is passed across the matcher boundary.
+    """
 
     record: AccountingRecord
     origin: CandidateOrigin
@@ -143,6 +182,7 @@ class BenchmarkCandidate:
     hard_negative_kind: HardNegativeKind | None = None
 
     def to_dict(self) -> dict[str, object]:
+        """Serialize the record and its evaluation metadata, using descriptive enum values."""
         return {
             "record": self.record.to_dict(),
             "origin": self.origin.value,
@@ -154,6 +194,7 @@ class BenchmarkCandidate:
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, object]) -> BenchmarkCandidate:
+        """Restore a candidate record and its origin labels from a serialized mapping."""
         record_raw = _required_mapping(raw, "record")
         kind_raw = raw.get("hard_negative_kind")
         kind = (
@@ -171,6 +212,12 @@ class BenchmarkCandidate:
 
 @dataclass(frozen=True, slots=True)
 class BenchmarkCase:
+    """One ranking question: a bank transaction and its accounting candidates.
+
+    A generated case contains ten candidates including the true match. Event,
+    scenario and perturbation metadata allow paired comparisons and evaluation;
+    they are not features available to the matcher.
+    """
     case_id: str
     seed: int
     event_id: str
@@ -182,9 +229,14 @@ class BenchmarkCase:
 
     @property
     def candidate_records(self) -> tuple[AccountingRecord, ...]:
+        """Return only the observable records, preserving the stored candidate order."""
         return tuple(candidate.record for candidate in self.candidates)
 
     def true_candidate_entry(self) -> BenchmarkCandidate:
+        """Find the labelled true candidate for validation or evaluation.
+
+        Raise ValueError unless true_candidate_id identifies exactly one candidate.
+        """
         matches = tuple(
             candidate for candidate in self.candidates if candidate.record.id == self.true_candidate_id
         )
@@ -195,9 +247,11 @@ class BenchmarkCase:
         return matches[0]
 
     def true_candidate(self) -> AccountingRecord:
+        """Return the true accounting record for checks that are allowed to use labels."""
         return self.true_candidate_entry().record
 
     def to_dict(self) -> dict[str, object]:
+        """Serialize the complete case, including nested records and evaluation labels."""
         return {
             "case_id": self.case_id,
             "seed": self.seed,
@@ -211,6 +265,11 @@ class BenchmarkCase:
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, object]) -> BenchmarkCase:
+        """Reconstruct a complete case and its typed nested records from JSON data.
+
+        This checks field shapes and enum values; generator validation checks the
+        benchmark-wide composition and pairing rules separately.
+        """
         transaction_raw = _required_mapping(raw, "transaction")
         candidate_items = _required_list(raw, "candidates")
         perturbation_items = _required_list(raw, "perturbations")

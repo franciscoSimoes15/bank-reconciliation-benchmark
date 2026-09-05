@@ -8,6 +8,11 @@ from recon_benchmark.domain.models import BenchmarkCase
 
 
 def write_jsonl(cases: Iterable[BenchmarkCase], path: str | Path) -> Path:
+    """Write each BenchmarkCase as one compact JSON object on its own UTF-8 line.
+
+    Use sorted keys and fixed newlines for reproducible bytes. Create parent folders,
+    replace existing content and return the output path.
+    """
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open("w", encoding="utf-8", newline="\n") as handle:
@@ -25,6 +30,12 @@ def write_jsonl(cases: Iterable[BenchmarkCase], path: str | Path) -> Path:
 
 
 def read_jsonl(path: str | Path) -> tuple[BenchmarkCase, ...]:
+    """Read nonblank JSONL lines and reconstruct typed BenchmarkCase objects.
+
+    Require one object per line; pretty-printed multiline JSON is not this format.
+    Return cases in file order. Field parsing errors propagate, while benchmark
+    composition and scenario pairing are checked separately by the generator.
+    """
     input_path = Path(path)
     cases: list[BenchmarkCase] = []
     with input_path.open("r", encoding="utf-8") as handle:

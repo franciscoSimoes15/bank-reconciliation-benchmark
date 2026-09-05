@@ -22,11 +22,13 @@ from recon_benchmark.domain.models import (
 
 
 def test_average_rank_handles_ties() -> None:
+    """Check that top and lower-score ties receive the mean of their occupied ranking positions."""
     assert average_rank([1.0, 1.0, 0.5], 1.0) == pytest.approx(1.5)
     assert average_rank([1.0, 0.8, 0.8, 0.2], 0.8) == pytest.approx(2.5)
 
 
 def test_unique_top1_rejects_top_tie_and_uses_average_rank() -> None:
+    """Verify a tied true candidate is not a unique success and receives reciprocal rank 2/3."""
     result = evaluate_case(
         _case(case_id="tie", false_is_equal=True),
         method=MatchingMethod.NORMALIZED_EXACT,
@@ -39,6 +41,7 @@ def test_unique_top1_rejects_top_tie_and_uses_average_rank() -> None:
 
 
 def test_unique_top1_accepts_true_candidate_alone_at_top() -> None:
+    """Verify an unambiguous correct winner receives rank 1, reciprocal rank 1 and Unique Top-1."""
     result = evaluate_case(
         _case(case_id="unique", false_is_equal=False),
         method=MatchingMethod.NORMALIZED_EXACT,
@@ -51,6 +54,7 @@ def test_unique_top1_accepts_true_candidate_alone_at_top() -> None:
 
 
 def test_aggregate_metrics_calculate_unique_top1_mrr_and_tie_rate() -> None:
+    """Check group averages using one tied case and one unambiguous success."""
     evaluations = tuple(
         evaluate_case(
             _case(case_id=case_id, false_is_equal=is_equal),
@@ -68,6 +72,9 @@ def test_aggregate_metrics_calculate_unique_top1_mrr_and_tie_rate() -> None:
 
 
 def test_evaluation_rejects_unequal_field_availability_between_candidates() -> None:
+    """Ensure a candidate cannot benefit from fewer compared fields without evaluation rejecting
+    the case.
+    """
     case = _case(case_id="unfair", false_is_equal=False)
     transaction = BankTransaction(
         id=case.transaction.id,
@@ -124,6 +131,10 @@ def test_evaluation_rejects_unequal_field_availability_between_candidates() -> N
 
 
 def _case(*, case_id: str, false_is_equal: bool) -> BenchmarkCase:
+    """Build a minimal two-candidate fixture with either equal scores or a clear true winner.
+
+    This isolates metric behavior; it is not a protocol-valid generated ten-candidate case.
+    """
     transaction = BankTransaction(
         id="bank",
         date=date(2026, 1, 1),

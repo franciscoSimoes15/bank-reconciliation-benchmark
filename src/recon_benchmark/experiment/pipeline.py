@@ -31,6 +31,14 @@ def run_experiment(
     config: ExperimentConfig,
     root: str | Path,
 ) -> dict[str, Path]:
+    """Generate and evaluate every requested seed, then write experiment artifacts.
+
+    seeds, cases_per_scenario and methods describe the effective run; config
+    supplies shared generation and scoring rules. Each seed produces paired cases.
+    Write per-seed and consolidated JSONL, metrics CSVs, report, figure and manifest
+    under root, replacing files at the same paths. Return output names mapped to
+    paths for the CLI. Configuration and generation failures propagate.
+    """
     config.validate()
     seed_list = list(seeds)
     method_list = list(methods)

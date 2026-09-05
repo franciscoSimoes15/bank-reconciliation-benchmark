@@ -10,6 +10,12 @@ from recon_benchmark.experiment.models import DEFAULT_METHODS, DEFAULT_SCENARIOS
 
 
 def load_config(path: str | Path | None = None) -> ExperimentConfig:
+    """Load and validate an ExperimentConfig from a JSON file or internal defaults.
+
+    With path=None, use dataclass defaults. In a JSON object, omitted keys use
+    fallback values and supplied values are type-checked before construction.
+    File, JSON parsing and validation errors propagate to the caller.
+    """
     if path is None:
         config = ExperimentConfig()
         config.validate()
@@ -55,16 +61,23 @@ def load_config(path: str | Path | None = None) -> ExperimentConfig:
 
 
 def _integer(raw: Mapping[str, object], key: str, default: int) -> int:
+    """Read an integer setting or its fallback, rejecting non-integers and booleans."""
     return _integer_value(raw.get(key, default), key)
 
 
 def _integer_value(value: object, key: str) -> int:
+    """Require a genuine integer for a setting or an evaluation-seed list item."""
     if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(f"{key} tem de ser inteiro.")
     return value
 
 
 def _decimal(raw: Mapping[str, object], key: str, default: str) -> Decimal:
+    """Read an amount setting and convert its textual representation to Decimal.
+
+    Accept text or numeric JSON values, reject booleans, and use the fallback
+    only when the key is absent.
+    """
     value = raw.get(key, default)
     if not isinstance(value, (str, int, float)) or isinstance(value, bool):
         raise ValueError(f"{key} tem de ser numérico.")
@@ -72,6 +85,7 @@ def _decimal(raw: Mapping[str, object], key: str, default: str) -> Decimal:
 
 
 def _float(raw: Mapping[str, object], key: str, default: float) -> float:
+    """Read a numeric setting as float without accepting booleans or numeric strings."""
     value = raw.get(key, default)
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise ValueError(f"{key} tem de ser numérico.")
@@ -79,6 +93,7 @@ def _float(raw: Mapping[str, object], key: str, default: float) -> float:
 
 
 def _list(raw: Mapping[str, object], key: str, default: list[object]) -> list[object]:
+    """Read a JSON list or its fallback; element checks belong to the calling loader."""
     value = raw.get(key, default)
     if not isinstance(value, list):
         raise ValueError(f"{key} tem de ser uma lista.")
@@ -86,6 +101,7 @@ def _list(raw: Mapping[str, object], key: str, default: list[object]) -> list[ob
 
 
 def _string_value(value: object, key: str) -> str:
+    """Require a textual list item before converting it into a scenario or method enum."""
     if not isinstance(value, str):
         raise ValueError(f"{key} só pode conter texto.")
     return value
