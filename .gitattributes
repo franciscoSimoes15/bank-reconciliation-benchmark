@@ -1,2 +1,5 @@
 # Keep benchmark bytes identical to their recorded SHA-256 values after checkout.
 *.jsonl text eol=lf
+# New review evidence uses LF too; historical CSV/report files are untouched.
+results/posthoc/** text eol=lf
+results/reproduction/** text eol=lf
