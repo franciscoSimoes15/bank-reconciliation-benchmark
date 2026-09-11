@@ -47,7 +47,7 @@
     ],
     "tie_epsilon": 1e-12
   },
-  "created_at_utc": "2026-09-04T16:14:20.131260+00:00",
+  "created_at_utc": "2026-09-11T14:21:12.902332+00:00",
   "dependencies": {
     "matplotlib": "3.10.8",
     "rapidfuzz": "3.14.3"
@@ -88,8 +88,8 @@
       46
     ]
   },
-  "git_commit": "d19a62c1e0695b2a062ce4eb7b2a331174622f7e",
-  "git_worktree_dirty": true,
+  "git_commit": "98fce0f752d6d5c5eed8994f655f0603e7c65090",
+  "git_worktree_dirty": false,
   "notes": [
     "FinancialEvent metadata and ground truth are excluded from every matcher call.",
     "Scores are compatibility measures in [0,1], not probabilities.",
@@ -97,7 +97,7 @@
     "The reference spreadsheet is not included and no transaction was copied from it."
   ],
   "platform": "Windows-11-10.0.26200-SP0",
-  "python": "3.12.7 | packaged by Anaconda, Inc. | (main, Oct  4 2024, 13:17:27) [MSC v.1929 64 bit (AMD64)]",
-  "source_tree_sha256": "e6be28ced4dc486bad153f4039536d17b8ba3ade9dd986e7fc5e4b32da77b81e",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "source_tree_sha256": "6bcdd5106a22a1b05fe5266c76faf4d555c05dfe93a550e29428fa2d5f7ef3e4",
   "standard_deviation": "sample (n-1); zero when only one seed is present"
 }

@@ -1,0 +1,177 @@
+{
+  "change_scope": "English documentation and presentation; no experimental retuning",
+  "configuration": {
+    "amount_similarity_absolute_scale": "1.00",
+    "amount_similarity_relative_scale": "0.01",
+    "amount_tolerance": "0.10",
+    "candidates_per_case": 10,
+    "cases_per_scenario": 100,
+    "controlled_hard_negative_count": 3,
+    "date_similarity_scale_days": 30,
+    "date_tolerance_days": 3,
+    "development_seed": 7,
+    "evaluation_seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "methods": [
+      "normalized_exact",
+      "tolerant_deterministic",
+      "jaro_winkler_text",
+      "character_trigram_text",
+      "field_aware",
+      "field_aware_without_description"
+    ],
+    "natural_negative_count": 6,
+    "qgram_size": 3,
+    "scenarios": [
+      "natural_variation",
+      "amount_variation",
+      "date_variation",
+      "reference_variation",
+      "entity_variation",
+      "description_variation",
+      "missing_information",
+      "combined_variation"
+    ],
+    "tie_epsilon": 1e-12
+  },
+  "created_at_utc": "2026-09-11T14:21:14.003021+00:00",
+  "dependencies": {
+    "matplotlib": "3.10.8",
+    "rapidfuzz": "3.14.3"
+  },
+  "frozen_scientific_baseline": "9ad7404d5ed8c67be4b748873939d9ccc727256f",
+  "historical_manifest": "results/reproduction/9ad7404d/original_execution_manifest.json",
+  "manifest": "results/experiment_manifest.json",
+  "note": "The source revision precedes the commit that archives its generated artifacts.",
+  "primary_and_diagnostic_comparisons": [
+    {
+      "comparison": "exact_bytes",
+      "generated_lf_sha256": "a9d0eacd0ff5e0253eb24807429e78672f469d19ba88e155dacc04368473165b",
+      "generated_raw_sha256": "a9d0eacd0ff5e0253eb24807429e78672f469d19ba88e155dacc04368473165b",
+      "git_blob_sha256": "a9d0eacd0ff5e0253eb24807429e78672f469d19ba88e155dacc04368473165b",
+      "passed": true,
+      "path": "benchmarks/seed_42.jsonl",
+      "reference_git_blob": "9ad7404d5ed8c67be4b748873939d9ccc727256f:benchmarks/seed_42.jsonl"
+    },
+    {
+      "comparison": "exact_bytes",
+      "generated_lf_sha256": "b0e84715309f1ab2ffd265a9c38c391f65d44c9cf3057cfc3a0fd79140829731",
+      "generated_raw_sha256": "b0e84715309f1ab2ffd265a9c38c391f65d44c9cf3057cfc3a0fd79140829731",
+      "git_blob_sha256": "b0e84715309f1ab2ffd265a9c38c391f65d44c9cf3057cfc3a0fd79140829731",
+      "passed": true,
+      "path": "benchmarks/seed_43.jsonl",
+      "reference_git_blob": "9ad7404d5ed8c67be4b748873939d9ccc727256f:benchmarks/seed_43.jsonl"
+    },
+    {
+      "comparison": "exact_bytes",
+      "generated_lf_sha256": "76fdffecbbca08c752cae5b15e8c2c75ad16d7dfcd8858d5d2a032d29c3b8195",
+      "generated_raw_sha256": "76fdffecbbca08c752cae5b15e8c2c75ad16d7dfcd8858d5d2a032d29c3b8195",
+      "git_blob_sha256": "76fdffecbbca08c752cae5b15e8c2c75ad16d7dfcd8858d5d2a032d29c3b8195",
+      "passed": true,
+      "path": "benchmarks/seed_44.jsonl",
+      "reference_git_blob": "9ad7404d5ed8c67be4b748873939d9ccc727256f:benchmarks/seed_44.jsonl"
+    },
+    {
+      "comparison": "exact_bytes",
+      "generated_lf_sha256": "67bc8bc18d537bae1c923c4b8d4379eb50eb9351663d28c7fb4e3a41cb49a216",
+      "generated_raw_sha256": "67bc8bc18d537bae1c923c4b8d4379eb50eb9351663d28c7fb4e3a41cb49a216",
+      "git_blob_sha256": "67bc8bc18d537bae1c923c4b8d4379eb50eb9351663d28c7fb4e3a41cb49a216",
+      "passed": true,
+      "path": "benchmarks/seed_45.jsonl",
+      "reference_git_blob": "9ad7404d5ed8c67be4b748873939d9ccc727256f:benchmarks/seed_45.jsonl"
+    },
+    {
+      "comparison": "exact_bytes",
+      "generated_lf_sha256": "38c06f88b71648bb6242095981972be4080b38089a65980aef0a2aacb5ae27a5",
+      "generated_raw_sha256": "38c06f88b71648bb6242095981972be4080b38089a65980aef0a2aacb5ae27a5",
+      "git_blob_sha256": "38c06f88b71648bb6242095981972be4080b38089a65980aef0a2aacb5ae27a5",
+      "passed": true,
+      "path": "benchmarks/seed_46.jsonl",
+      "reference_git_blob": "9ad7404d5ed8c67be4b748873939d9ccc727256f:benchmarks/seed_46.jsonl"
+    },
+    {
+      "comparison": "exact_bytes",
+      "generated_lf_sha256": "e439b7f597237825f41188c3a09a9174c22d74fe202eac9265a59e8155faac4f",
+      "generated_raw_sha256": "e439b7f597237825f41188c3a09a9174c22d74fe202eac9265a59e8155faac4f",
+      "git_blob_sha256": "e439b7f597237825f41188c3a09a9174c22d74fe202eac9265a59e8155faac4f",
+      "passed": true,
+      "path": "results/benchmark.jsonl",
+      "reference_git_blob": "9ad7404d5ed8c67be4b748873939d9ccc727256f:results/benchmark.jsonl"
+    },
+    {
+      "comparison": "LF_canonical",
+      "generated_lf_sha256": "2daf2a7d360ca19dbddf96bed8cd091a30e33f5dc980da27b20fd8e8250c7072",
+      "generated_raw_sha256": "c96af15121c9b4c3606fb76c37b1db0b2d05828134671dc5c25eaf008d4d0dc2",
+      "git_blob_sha256": "2daf2a7d360ca19dbddf96bed8cd091a30e33f5dc980da27b20fd8e8250c7072",
+      "passed": true,
+      "path": "results/per_case.csv",
+      "reference_git_blob": "9ad7404d5ed8c67be4b748873939d9ccc727256f:results/per_case.csv"
+    },
+    {
+      "comparison": "LF_canonical",
+      "generated_lf_sha256": "d6dadb107ff3a80f9d1d11a84604e161bbe9f9720b2feb47e8d8b60999ab877f",
+      "generated_raw_sha256": "485a761544c2d46847ef132c0253653130580382b362581c275a335f6eda240c",
+      "git_blob_sha256": "d6dadb107ff3a80f9d1d11a84604e161bbe9f9720b2feb47e8d8b60999ab877f",
+      "passed": true,
+      "path": "results/by_scenario.csv",
+      "reference_git_blob": "9ad7404d5ed8c67be4b748873939d9ccc727256f:results/by_scenario.csv"
+    },
+    {
+      "comparison": "LF_canonical",
+      "generated_lf_sha256": "9e04dcd7d490988ff67ba8b586206a8811160de81c290cb82a87eb4f579c478e",
+      "generated_raw_sha256": "f135f9dc887cdec919fab90d6311e694aaae9a031a65c8c10b8cd23793cb26fc",
+      "git_blob_sha256": "9e04dcd7d490988ff67ba8b586206a8811160de81c290cb82a87eb4f579c478e",
+      "passed": true,
+      "path": "results/summary.csv",
+      "reference_git_blob": "9ad7404d5ed8c67be4b748873939d9ccc727256f:results/summary.csv"
+    },
+    {
+      "comparison": "LF_canonical",
+      "generated_lf_sha256": "41d75eb3b200bb944ceddd6aa1d675bb312949ad9e6582b21925d5ad60025c57",
+      "generated_raw_sha256": "86aef6f00c38f6766035c32e0355866669d78daa7309db17ce2e7c7cc2298e33",
+      "git_blob_sha256": "41d75eb3b200bb944ceddd6aa1d675bb312949ad9e6582b21925d5ad60025c57",
+      "passed": true,
+      "path": "results/operation_diagnostics.csv",
+      "reference_git_blob": "8ee9f98:results/posthoc/operation_diagnostics.csv"
+    },
+    {
+      "comparison": "LF_canonical",
+      "generated_lf_sha256": "fced81a08e5db2d9080195d600a2f3e90dc76e625d39d27e4d1274914fd9cae6",
+      "generated_raw_sha256": "bc5b3b652b596f9793b09d797f3b08fe4fedc5ea3e06516b9a00c81e78de73ee",
+      "git_blob_sha256": "fced81a08e5db2d9080195d600a2f3e90dc76e625d39d27e4d1274914fd9cae6",
+      "passed": true,
+      "path": "results/amount_pair_diagnostics.csv",
+      "reference_git_blob": "8ee9f98:results/posthoc/amount_pair_diagnostics.csv"
+    }
+  ],
+  "published_artifact_sha256": {
+    "benchmarks/seed_42.jsonl": "a9d0eacd0ff5e0253eb24807429e78672f469d19ba88e155dacc04368473165b",
+    "benchmarks/seed_43.jsonl": "b0e84715309f1ab2ffd265a9c38c391f65d44c9cf3057cfc3a0fd79140829731",
+    "benchmarks/seed_44.jsonl": "76fdffecbbca08c752cae5b15e8c2c75ad16d7dfcd8858d5d2a032d29c3b8195",
+    "benchmarks/seed_45.jsonl": "67bc8bc18d537bae1c923c4b8d4379eb50eb9351663d28c7fb4e3a41cb49a216",
+    "benchmarks/seed_46.jsonl": "38c06f88b71648bb6242095981972be4080b38089a65980aef0a2aacb5ae27a5",
+    "figures/method_comparison_by_scenario.png": "f27ef06fb109a6d9c8de9c06dde85ff736729edb948f3f5f879f2fbe124e4f3f",
+    "figures/robustness_by_scenario.png": "853b7a2207671eb26f135c8d076c385b8b0fe9daba8cbf26411eeca13060b68f",
+    "results/amount_pair_diagnostics.csv": "fced81a08e5db2d9080195d600a2f3e90dc76e625d39d27e4d1274914fd9cae6",
+    "results/benchmark.jsonl": "e439b7f597237825f41188c3a09a9174c22d74fe202eac9265a59e8155faac4f",
+    "results/by_scenario.csv": "d6dadb107ff3a80f9d1d11a84604e161bbe9f9720b2feb47e8d8b60999ab877f",
+    "results/experiment_manifest.json": "bf766e307da717a3db410e4993ef3f5c578058e808b137e3ae414d9075d95334",
+    "results/manifest.json": "bf766e307da717a3db410e4993ef3f5c578058e808b137e3ae414d9075d95334",
+    "results/operation_diagnostics.csv": "41d75eb3b200bb944ceddd6aa1d675bb312949ad9e6582b21925d5ad60025c57",
+    "results/per_case.csv": "2daf2a7d360ca19dbddf96bed8cd091a30e33f5dc980da27b20fd8e8250c7072",
+    "results/report.md": "6fdf4f40e192dcc9c2ec43887f8a1865f44dc22d06d274747abc87fbc36a5f5f",
+    "results/summary.csv": "9e04dcd7d490988ff67ba8b586206a8811160de81c290cb82a87eb4f579c478e"
+  },
+  "published_text_encoding": "UTF-8; LF. Original raw hashes remain in comparison records.",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "source_revision": "98fce0f752d6d5c5eed8994f655f0603e7c65090",
+  "source_tree_sha256": "6bcdd5106a22a1b05fe5266c76faf4d555c05dfe93a550e29428fa2d5f7ef3e4",
+  "status": "passed",
+  "worktree_clean_after": true,
+  "worktree_clean_before": true
+}
