@@ -8,6 +8,7 @@ from recon_benchmark.domain.models import MatchingMethod
 from recon_benchmark.experiment.pipeline import run_experiment
 from recon_benchmark.storage.serialization import read_jsonl
 from recon_benchmark.metrics.reporting import _source_tree_digest
+from recon_benchmark.metrics.reporting import _decimal, _pct
 
 
 def test_small_pipeline_writes_and_validates_all_required_outputs(tmp_path: Path) -> None:
@@ -32,6 +33,8 @@ def test_small_pipeline_writes_and_validates_all_required_outputs(tmp_path: Path
         "per_case",
         "by_scenario",
         "summary",
+        "operation_diagnostics",
+        "amount_pair_diagnostics",
         "report",
         "experiment_manifest",
         "manifest",
@@ -61,6 +64,9 @@ def test_small_pipeline_writes_and_validates_all_required_outputs(tmp_path: Path
     summary_rows = _csv_rows(outputs["summary"])
     assert len(summary_rows) == 9 * len(methods)
     assert sum(row["scenario"] == "ALL" for row in summary_rows) == len(methods)
+    assert _csv_rows(outputs["operation_diagnostics"])
+    assert _csv_rows(outputs["amount_pair_diagnostics"])
+    assert "diagnóstica posterior" in outputs["report"].read_text(encoding="utf-8")
 
     manifest = json.loads(outputs["experiment_manifest"].read_text(encoding="utf-8"))
     assert manifest["effective_run"]["seeds"] == [7]
@@ -87,6 +93,14 @@ def test_source_digest_includes_nested_modules_and_templates(tmp_path: Path) -> 
     assert updated != initial
     (tmp_path / "report.md").write_text("Output does not change source", encoding="utf-8")
     assert _source_tree_digest(tmp_path) == updated
+
+
+def test_report_rounds_decimal_ties_consistently_with_the_paper() -> None:
+    """Protect percentage and metric ties from a binary-float rounding discrepancy."""
+    assert _pct("0.141750000000") == "14.18%"
+    assert _pct("0.012250000000") == "1.23%"
+    assert _pct("0.141749999999") == "14.17%"
+    assert _decimal("0.888750000000") == "0.8888"
 
 
 def _csv_rows(path: Path) -> list[dict[str, str]]:

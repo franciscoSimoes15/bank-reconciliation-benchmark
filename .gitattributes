@@ -1,0 +1,2 @@
+# Keep benchmark bytes identical to their recorded SHA-256 values after checkout.
+*.jsonl text eol=lf

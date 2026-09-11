@@ -10,6 +10,7 @@ import sys
 from collections import defaultdict
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
 import matplotlib
@@ -212,11 +213,14 @@ def write_markdown_report(
     *,
     summary_csv: str | Path,
     path: str | Path,
+    operation_csv: str | Path | None = None,
+    amount_pairs_csv: str | Path | None = None,
 ) -> Path:
     """Render summary CSV metrics as a Markdown report with global and scenario tables.
 
     Show the description ablation globally but keep the scenario comparison to the
-    five primary methods. Write the report and return its path.
+    five primary methods. Optional diagnostics describe the frozen cases after
+    evaluation; they never change the primary metrics. Write and return the path.
     """
     rows = _read_csv(summary_csv)
     overall = [row for row in rows if row["scenario"] == "ALL"]
@@ -266,6 +270,8 @@ def write_markdown_report(
         values = [_pct(lookup[(code, scenario)]["unique_top1_mean"]) for scenario in scenarios]
         lines.append(f"| {code} | " + " | ".join(values) + " |")
 
+    lines.extend(_diagnostic_report_lines(operation_csv, amount_pairs_csv))
+
     lines.extend(
         [
             "",
@@ -283,6 +289,72 @@ def write_markdown_report(
     output = _prepare_path(path)
     output.write_text("\n".join(lines), encoding="utf-8")
     return output
+
+
+def _diagnostic_report_lines(
+    operation_csv: str | Path | None,
+    amount_pairs_csv: str | Path | None,
+) -> list[str]:
+    """Explain post-hoc operation strata and paired amount outcomes from diagnostic CSVs."""
+    lines: list[str] = []
+    if operation_csv is not None:
+        rows = [row for row in _read_csv(operation_csv) if row["aggregation"] == "pooled_cases"]
+        lookup = {(row["operation_group"], row["method_code"]): row for row in rows}
+        labels = {
+            "supplier_transfer": "Transferência a fornecedor",
+            "customer_receipt": "Recebimento de cliente",
+            "direct_debit": "Débito direto",
+            "card_payment": "Pagamento com cartão",
+            "bank_fee": "Comissões bancárias",
+            "tax_payment": "Pagamento fiscal",
+            "non_bank_fee": "Restantes operações (subtotal)",
+            "ALL": "Total",
+        }
+        lines.extend([
+            "", "## Análise diagnóstica posterior por operação", "",
+            "Proporções agrupadas dos casos existentes, incluindo os cenários emparelhados. "
+            "São uma análise descritiva posterior ao freeze; não são novas amostras independentes. "
+            "O CSV inclui também resultados por seed e média/desvio-padrão entre seeds. "
+            "Os subtotais sobrepõem-se às linhas por operação.", "",
+            "| Operação | Eventos base | Casos | M4 Unique Top-1 | M4-D Unique Top-1 |",
+            "|---|---:|---:|---:|---:|",
+        ])
+        for group, label in labels.items():
+            available = next((lookup[(group, code)] for code in ("M4", "M4-D") if (group, code) in lookup), None)
+            if available is None:
+                continue
+            values = [
+                _pct(lookup[(group, code)]["unique_top1"]) if (group, code) in lookup else "—"
+                for code in ("M4", "M4-D")
+            ]
+            lines.append(f"| {label} | {available['base_events']} | {available['cases']} | " + " | ".join(values) + " |")
+        lines.extend([
+            "",
+            "Nas comissões, um hard negative partilha montante, data, referência ausente e "
+            "entidade ausente com o verdadeiro, mas a descrição é forçada a diferir. M4-D "
+            "empata necessariamente esses candidatos. Cada fonte escolhe apenas dois templates "
+            "por operação, sem um facto narrativo específico do evento. Desempatar com descrição "
+            "não demonstra, por si só, informação identificadora adicional.",
+        ])
+    if amount_pairs_csv is not None:
+        rows = [row for row in _read_csv(amount_pairs_csv) if row["aggregation"] == "pooled_pairs"]
+        lines.extend([
+            "", "## Diagnóstico emparelhado de montante", "",
+            "Comparação de cada variante de montante com o seu caso natural. As contagens "
+            "referem-se à posição média do verdadeiro, Unique Top-1 e tamanho do empate no topo; "
+            "não medem alterações de toda a ordenação.", "",
+            "| Método | Pares | Posição alterada | Unique Top-1 alterado | Empate no topo alterado |",
+            "|---|---:|---:|---:|---:|",
+        ])
+        for row in rows:
+            lines.append(f"| {row['method_code']} | {row['pairs']} | {row['true_average_rank_changed']} | {row['unique_top1_changed']} | {row['top_tie_count_changed']} |")
+        lines.extend([
+            "",
+            "Os três hard negatives preservam o montante verdadeiro. Uma alteração bancária "
+            "modifica igualmente essa componente no verdadeiro e nesses concorrentes. "
+            "A invariância observada depende também desta construção dos candidatos.",
+        ])
+    return lines
 
 
 def create_robustness_figure(summary_csv: str | Path, path: str | Path) -> Path:
@@ -373,13 +445,15 @@ def _read_csv(path: str | Path) -> list[dict[str, str]]:
 
 
 def _pct(value: str) -> str:
-    """Format a stored proportion as a percentage with two decimal places."""
-    return f"{float(value) * 100:.2f}%"
+    """Format stored decimal text with explicit half-up percentage rounding."""
+    percentage = (Decimal(value) * 100).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    return f"{percentage:.2f}%"
 
 
 def _decimal(value: str) -> str:
-    """Format a stored metric as a decimal with four places for the Markdown report."""
-    return f"{float(value):.4f}"
+    """Format a stored metric to four places with the same half-up convention."""
+    rounded = Decimal(value).quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+    return f"{rounded:.4f}"
 
 
 def _module_version(module_name: str) -> str:

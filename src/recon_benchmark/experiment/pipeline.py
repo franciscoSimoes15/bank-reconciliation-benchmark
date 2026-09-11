@@ -5,6 +5,10 @@ from pathlib import Path
 
 from recon_benchmark.experiment.models import ExperimentConfig
 from recon_benchmark.metrics.models import CaseEvaluation
+from recon_benchmark.metrics.diagnostics import (
+    write_amount_pair_diagnostics,
+    write_operation_diagnostics,
+)
 from recon_benchmark.metrics.evaluation import (
     aggregate_by_seed_scenario,
     aggregate_overall_by_seed,
@@ -86,6 +90,12 @@ def run_experiment(
         results_dir / "by_scenario.csv",
     )
     summary_path = write_summary_csv(all_metrics, results_dir / "summary.csv")
+    operation_path = write_operation_diagnostics(
+        all_cases, all_evaluations, results_dir / "operation_diagnostics.csv",
+    )
+    amount_pairs_path = write_amount_pair_diagnostics(
+        all_cases, all_evaluations, results_dir / "amount_pair_diagnostics.csv",
+    )
     manifest_path = write_manifest(
         config=config,
         benchmark_digests=digests,
@@ -98,6 +108,8 @@ def run_experiment(
     manifest_alias_path.write_bytes(manifest_path.read_bytes())
     report_path = write_markdown_report(
         summary_csv=summary_path,
+        operation_csv=operation_path,
+        amount_pairs_csv=amount_pairs_path,
         path=results_dir / "report.md",
     )
     figure_path = create_robustness_figure(
@@ -110,6 +122,8 @@ def run_experiment(
         "per_case": per_case_path,
         "by_scenario": by_scenario_path,
         "summary": summary_path,
+        "operation_diagnostics": operation_path,
+        "amount_pair_diagnostics": amount_pairs_path,
         "report": report_path,
         "experiment_manifest": manifest_path,
         "manifest": manifest_alias_path,

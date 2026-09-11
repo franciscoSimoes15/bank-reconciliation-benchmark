@@ -242,6 +242,29 @@ I/O e regras como missing, empates ou proteção do ground truth. As funções d
 teste descrevem o comportamento que verificam. Estas descrições aparecem no
 editor ao consultar um símbolo e podem ser lidas com `help()` no Python.
 
+## Revisão posterior da experiência congelada
+
+O gerador, os métodos, a configuração e os resultados numéricos de `9ad7404d`
+mantêm-se. A [análise posterior](docs/POST_HOC_ANALYSIS.md) explica a ablation por
+operação e a invariância do cenário de montante. Em particular, todo o ganho
+agregado de Unique Top-1 de M4 sobre M4-D provém das comissões bancárias; fora
+desse grupo, M4-D obtém 90,08% e M4 obtém 88,79%.
+
+Novas execuções escrevem `operation_diagnostics.csv` e
+`amount_pair_diagnostics.csv`, além dos outputs existentes. O
+[relatório adicional](results/posthoc/report.md) identifica estes resultados como
+diagnósticos posteriores, sem alterar os ficheiros históricos. A formatação nova
+usa arredondamento decimal explícito, corrigindo 14,175% para 14,18%.
+
+Para verificar o commit publicado numa cópia limpa e guardar um manifest novo:
+
+```powershell
+python scripts/reproduce_frozen.py --output-root ../frozen-reproduction
+```
+
+Consultar a [política de reprodução e hashes](docs/REPRODUCIBILITY.md), que
+distingue igualdade exata dos JSONL de equivalência LF/CRLF nos CSV e relatório.
+
 ## Limites
 
 O benchmark não cobre 1:N, N:1, N:N, ausência do candidato verdadeiro, fees/FX/partial payments como relações complexas, integração ERP ou calibração de auto-reconciliação. Resultados sintéticos não demonstram desempenho em produção.

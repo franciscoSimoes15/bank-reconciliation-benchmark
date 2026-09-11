@@ -12,12 +12,13 @@ from recon_benchmark.domain.models import (
     OperationType,
     Scenario,
 )
-from recon_benchmark.normalization.fields import normalize_description
+from recon_benchmark.normalization.fields import normalize_description, normalize_reference
 from recon_benchmark.generation.synthetic_data import (
     generate_financial_event,
     render_accounting_record,
     render_bank_transaction,
 )
+from recon_benchmark.templates.accounting import ACCOUNTING_DESCRIPTIONS
 
 
 def test_financial_event_has_two_independent_renderers() -> None:
@@ -168,31 +169,61 @@ def test_candidate_ids_are_opaque_and_do_not_encode_origin() -> None:
 
 
 def test_controlled_hard_negatives_guarantee_declared_conflicts() -> None:
-    """Verify each hard-negative family preserves intended evidence while conflicting with the
-    true document.
+    """Check all operation families and paired scenarios, including absent conflict fields.
+
+    Bank fees intentionally have a first hard negative that differs only in its
+    description; reference conflicts cannot be asserted when references are absent.
     """
-    case = generate_benchmark(seed=7, cases_per_scenario=1, config=ExperimentConfig())[0]
-    true_record = case.true_candidate()
-    hard = {
-        candidate.hard_negative_kind: candidate.record
-        for candidate in case.candidates
-        if candidate.origin is CandidateOrigin.CONTROLLED_HARD_NEGATIVE
-    }
+    cases = generate_benchmark(seed=7, cases_per_scenario=6, config=ExperimentConfig())
+    covered: set[tuple[OperationType, Scenario]] = set()
+    for case in cases:
+        true_record = case.true_candidate()
+        operation = next(
+            operation
+            for operation, descriptions in ACCOUNTING_DESCRIPTIONS.items()
+            if true_record.description in descriptions
+        )
+        covered.add((operation, case.scenario))
+        hard = {
+            candidate.hard_negative_kind: candidate.record
+            for candidate in case.candidates
+            if candidate.origin is CandidateOrigin.CONTROLLED_HARD_NEGATIVE
+        }
 
-    amount_date = hard[HardNegativeKind.AMOUNT_DATE_NEAR_REFERENCE]
-    assert amount_date.amount == true_record.amount
-    assert amount_date.date == true_record.date
-    assert amount_date.reference != true_record.reference
+        amount_date = hard[HardNegativeKind.AMOUNT_DATE_NEAR_REFERENCE]
+        assert amount_date.amount == true_record.amount
+        assert amount_date.date == true_record.date
+        if operation is OperationType.BANK_FEE:
+            assert amount_date.entity is true_record.entity is None
+            assert amount_date.description != true_record.description
+        else:
+            assert amount_date.entity != true_record.entity
 
-    same_entity = hard[HardNegativeKind.SAME_ENTITY_OTHER_DOCUMENT]
-    assert same_entity.amount == true_record.amount
-    assert same_entity.entity == true_record.entity
-    assert same_entity.reference != true_record.reference
+        same_entity = hard[HardNegativeKind.SAME_ENTITY_OTHER_DOCUMENT]
+        assert same_entity.amount == true_record.amount
+        assert same_entity.entity == true_record.entity
+        assert abs((same_entity.date - true_record.date).days) == 7
 
-    multi_field = hard[HardNegativeKind.MULTI_FIELD_CHALLENGER]
-    assert multi_field.amount == true_record.amount
-    assert multi_field.entity == true_record.entity
-    assert abs((multi_field.date - true_record.date).days) == 1
+        multi_field = hard[HardNegativeKind.MULTI_FIELD_CHALLENGER]
+        assert multi_field.amount == true_record.amount
+        assert multi_field.entity == true_record.entity
+        assert abs((multi_field.date - true_record.date).days) == 1
+
+        for record, offset in ((amount_date, 1), (same_entity, 17), (multi_field, 2)):
+            if operation in {OperationType.CARD_PAYMENT, OperationType.BANK_FEE}:
+                assert record.reference is true_record.reference is None
+            else:
+                assert record.reference is not None
+                assert true_record.reference is not None
+                true_reference = normalize_reference(true_record.reference)
+                assert true_reference is not None
+                match = re.fullmatch(r"([a-z]+\d{4})(\d+)", true_reference)
+                assert match is not None
+                number = match.group(2)
+                expected = f"{match.group(1)}{int(number) + offset:0{len(number)}d}"
+                assert normalize_reference(record.reference) == expected
+
+    assert covered == {(operation, scenario) for operation in OperationType for scenario in Scenario}
 
 
 def _transaction_fields(transaction: BankTransaction) -> dict[str, object]:
