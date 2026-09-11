@@ -1,1 +1,1 @@
-"""Componentes de domain do benchmark."""
+"""Benchmark domain models and validation."""

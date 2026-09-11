@@ -1,55 +1,55 @@
-# Observações estruturais retiradas do Excel de exemplo
+# Structural observations from the example spreadsheet
 
-## Regra de utilização
+## Usage rule
 
-O ficheiro fornecido pelo utilizador **não é um dataset do benchmark**. Foi lido apenas para perceber que formas de descrição e de estrutura bancária poderiam ser representadas sinteticamente.
+The file supplied by the user **is not a benchmark dataset**. It was inspected only to understand which description families and banking structures could be represented synthetically.
 
-O projeto não inclui o Excel e não copia:
+The project does not include the spreadsheet or copy:
 
-- nomes de pessoas ou empresas;
-- montantes;
-- saldos;
-- datas concretas;
-- referências concretas;
-- linhas completas.
+- personal or company names;
+- amounts;
+- balances;
+- specific dates;
+- specific references;
+- complete rows.
 
-## Padrões estruturais observados
+## Observed structural patterns
 
-O exemplo contém a estrutura típica de um extrato:
+The example has a typical bank-statement structure:
 
 ```text
-Data de lançamento
-Data valor
-Descritivo
-Débito
-Crédito
-Saldo
+Posting date
+Value date
+Description
+Debit
+Credit
+Balance
 ```
 
-As descrições mostram famílias funcionais comuns:
+The descriptions show common functional families:
 
-- transferências de saída com prefixos abreviados;
-- transferências de entrada;
-- compras com cartão/terminal e identificadores numéricos;
-- débitos diretos;
-- pagamentos de empréstimos;
-- comissões de conta ou transferência;
-- imposto do selo associado a comissões;
-- pagamentos a entidades públicas.
+- outgoing transfers with abbreviated prefixes;
+- incoming transfers;
+- card/terminal purchases with numeric identifiers;
+- direct debits;
+- loan repayments;
+- account or transfer fees;
+- stamp duty associated with fees;
+- payments to public bodies.
 
-Também aparecem características relevantes para reconhecimento de padrões:
+They also contain features relevant to pattern recognition:
 
-- descrições em maiúsculas e minúsculas;
-- acentos e pontuação inconsistentes;
-- abreviações bancárias;
-- identificadores numéricos embebidos;
-- nomes longos ou truncados;
-- data de lançamento diferente da data-valor;
-- débitos e créditos em colunas diferentes.
+- uppercase and lowercase descriptions;
+- inconsistent accents and punctuation;
+- banking abbreviations;
+- embedded numeric identifiers;
+- long or truncated names;
+- posting dates that differ from value dates;
+- separate debit and credit columns.
 
-## Como estas observações entram no gerador
+## How these observations inform the generator
 
-O projeto usa apenas famílias semânticas genéricas e cria templates bancários e contabilísticos independentes, por exemplo:
+The project uses only generic semantic families and creates independent banking and accounting templates, for example:
 
 ```text
 BankTransaction:  TRF SEPA EMITIDA CANAL EMPRESAS
@@ -59,11 +59,11 @@ BankTransaction:  DEBITO DIRETO SEPA AUTORIZADO
 AccountingRecord: Pagamento recorrente contabilizado
 ```
 
-Reference e entity são campos próprios e não são repetidos sistematicamente na description. Isto impede que a média conte a mesma evidência duas vezes. A presença desses campos depende do tipo de operação.
+Reference and entity have dedicated fields and are not systematically repeated in the description. This avoids systematically counting the same evidence twice in the mean. The presence of these fields depends on the operation type.
 
-O montante é convertido para um único campo assinado:
+Amounts are represented by a single signed field:
 
-- entrada/crédito → positivo;
-- saída/débito → negativo.
+- incoming/credit → positive;
+- outgoing/debit → negative.
 
-O benchmark principal usa apenas `date`, não `value_date`, para manter o scope pequeno. A diferença entre essas datas fica documentada como possibilidade de future work.
+The main benchmark uses only `date`, not `value_date`, to keep the scope small. The difference between these dates is documented as a possible direction for future work.

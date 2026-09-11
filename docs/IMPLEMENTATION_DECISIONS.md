@@ -1,45 +1,45 @@
-# Decisões de implementação antes do freeze
+# Implementation decisions before the freeze
 
-Este ficheiro regista decisões do protocolo implementadas com a development seed `7`, antes das evaluation seeds `42–46`.
+This file records protocol decisions implemented using development seed `7`, before evaluation seeds `42–46`.
 
-## Evento latente e renderização
+## Latent event and rendering
 
-O modelo antigo construía primeiro o `AccountingRecord` e copiava-o para `BankTransaction`. Foi removido. Agora um `FinancialEvent` latente alimenta dois renderers independentes com fontes de aleatoriedade separadas.
+The old model first constructed an `AccountingRecord` and copied it into a `BankTransaction`. That model was removed. A latent `FinancialEvent` now feeds two independent renderers with separate randomness sources.
 
-As descrições representam convenções da fonte, não um identificador oculto comum. Em particular, não incluem sistematicamente reference/entity, para evitar dupla contagem desses sinais na agregação.
+Descriptions represent source conventions, not a shared hidden identifier. In particular, they do not systematically include reference/entity, avoiding double counting of these signals during aggregation.
 
 ## Candidate sets
 
-Os candidate sets são construídos antes das perturbações e reutilizados sem alteração de conteúdo ou ordem nos oito cenários. Isto elimina a antiga dependência de um negativo em valores observados no cenário.
+Candidate sets are constructed before perturbations and reused without changing their contents or order across the eight scenarios. This removes the previous dependence of a negative on scenario-observed values.
 
-A composição fica fixa em 1+6+3:
+The composition is fixed at 1+6+3:
 
-- o true candidate é a renderização contabilística do evento;
-- seis natural negatives são registos reais do ledger sintético, provenientes de outros eventos;
-- três controlled hard negatives são novos eventos coerentes que partilham evidências específicas.
+- the true candidate is the event's accounting rendering;
+- six natural negatives are existing records from other events in the synthetic ledger;
+- three controlled hard negatives are new coherent events that share specific evidence.
 
-Os IDs usam o mesmo formato opaco independentemente da origem.
+IDs use the same opaque format regardless of origin.
 
-## Disponibilidade e missing
+## Availability and missing values
 
-Os tipos de operação determinam se reference/entity existem. Para impedir que um candidato beneficie por ter menos evidências comparadas, os dez candidatos de um caso conservam o mesmo padrão de disponibilidade. O cenário missing remove informação do lado bancário, afetando todos de forma igual.
+Operation types determine whether reference/entity exist. To prevent a candidate from benefiting from fewer compared fields, all ten candidates in a case retain the same availability pattern. The missing-information scenario removes bank-side information, affecting all candidates equally.
 
-Além do registo de `compared_field_count`, a avaliação falha quando as contagens diferem entre candidatos.
+In addition to recording `compared_field_count`, evaluation fails when these counts differ across candidates.
 
 ## Scores
 
-M0 e M1 mantêm as regras exatas/binárias. M2–M4 usam funções lineares e limitadas a `[0,1]` para proximidade de amount/date. A escala de amount é o máximo entre 1 euro e 1% do maior montante absoluto; a escala temporal é 30 dias. Estes valores estão explícitos na configuração porque o protocolo exige gradualidade, mas não fixa a função.
+M0 and M1 retain exact/binary rules. M2–M4 use linear functions bounded to `[0,1]` for amount/date proximity. The amount scale is the maximum of 1 euro and 1% of the larger absolute amount; the temporal scale is 30 days. These values are explicit in the configuration because the protocol requires graduality but does not specify the function.
 
-M4 decompõe referências reconhecidas em prefixo, ano e número. A combinação transparente é 15% prefixo, 15% ano e 70% número; o número tem de ser exatamente igual. Jaro-Winkler é fallback quando o formato não é reconhecido. Estes pesos são internos ao comparador estruturado, não pesos aprendidos da agregação de campos.
+M4 decomposes recognized references into prefix, year and number. The transparent combination is 15% prefix, 15% year and 70% number; the number comparison requires exact equality. Jaro-Winkler is the fallback when the format is not recognized. These weights are internal to the structured comparator, not learned field-aggregation weights.
 
-A média dos campos disponíveis não usa pesos treinados. `FIELD_AWARE_WITHOUT_DESCRIPTION` mantém-se apenas como ablation simples.
+The mean of available fields uses no trained weights. `FIELD_AWARE_WITHOUT_DESCRIPTION` remains a simple ablation.
 
-O desvio-padrão agregado é amostral (`n-1`) e vale zero quando a execução contém apenas uma seed.
+The aggregate standard deviation is the sample standard deviation (`n-1`) and equals zero when a run contains only one seed.
 
-## Casos sem reference/entity
+## Cases without reference/entity
 
-Nem todos os tipos têm documento ou entidade contabilística. Nesses casos, um hard negative usa apenas os conflitos possíveis sem inventar campos. Em `reference_variation`, uma referência originalmente ausente pode receber um trace bancário; em `entity_variation`, uma entidade ausente pode receber uma label da fonte. Ambas são alterações reais, mas não passam a criar evidência contabilística artificial.
+Not all types have a document or accounting entity. In these cases, a hard negative uses only possible conflicts without inventing fields. In `reference_variation`, an originally absent reference may receive a bank trace; in `entity_variation`, an absent entity may receive a source label. Both are effective changes, but neither creates artificial accounting evidence.
 
 ## Freeze
 
-`run-final` usa diretamente `config/experiment.json` e não disponibiliza overrides de seeds, tamanho ou métodos. O manifest regista a configuração efetiva, versões, timestamp, commit e hashes. Depois das seeds `42–46`, mudanças metodológicas exigem um novo protocolo; apenas bugs confirmados podem justificar correções desta versão.
+`run-final` uses `config/experiment.json` directly and exposes no seed, size or method overrides. The manifest records the effective configuration, versions, timestamp, commit and hashes. After seeds `42–46`, methodological changes require a new protocol; only confirmed bugs can justify corrections to this version.

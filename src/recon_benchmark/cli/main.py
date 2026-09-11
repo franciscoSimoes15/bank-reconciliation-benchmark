@@ -23,27 +23,27 @@ def build_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog="recon-benchmark",
-        description="Benchmark sintético de ranking 1:1 para reconciliação bancária.",
+        description="Synthetic benchmark for 1:1 ranking in bank reconciliation.",
     )
     parser.add_argument(
         "--config",
         default="config/experiment.json",
-        help="Caminho para a configuração JSON (default: config/experiment.json).",
+        help="Path to the JSON configuration (default: config/experiment.json).",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    generate_parser = subparsers.add_parser("generate", help="Gerar um benchmark JSONL.")
+    generate_parser = subparsers.add_parser("generate", help="Generate a benchmark JSONL file.")
     generate_parser.add_argument("--seed", type=int, default=7)
     generate_parser.add_argument("--cases-per-scenario", type=int, default=3)
     generate_parser.add_argument("--output", default=None)
 
-    validate_parser = subparsers.add_parser("validate", help="Validar invariantes de um benchmark.")
+    validate_parser = subparsers.add_parser("validate", help="Validate benchmark invariants.")
     validate_parser.add_argument("--input", required=True)
     validate_parser.add_argument("--cases-per-scenario", type=int, default=None)
 
     evaluate_parser = subparsers.add_parser(
         "evaluate",
-        help="Executar uma experiência de desenvolvimento.",
+        help="Run a development experiment.",
     )
     evaluate_parser.add_argument("--seed", type=int, default=7)
     evaluate_parser.add_argument("--cases-per-scenario", type=int, default=3)
@@ -52,11 +52,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     final_parser = subparsers.add_parser(
         "run-final",
-        help="Executar a configuração e as evaluation seeds congeladas.",
+        help="Run the frozen configuration and evaluation seeds.",
     )
     final_parser.add_argument("--output-root", default=".")
 
-    demo_parser = subparsers.add_parser("demo", help="Gerar e explicar um caso ponta a ponta.")
+    demo_parser = subparsers.add_parser("demo", help="Generate and explain one case from start to finish.")
     demo_parser.add_argument("--seed", type=int, default=7)
     demo_parser.add_argument(
         "--scenario",
@@ -71,7 +71,7 @@ def build_parser() -> argparse.ArgumentParser:
     demo_parser.add_argument("--output", default="examples/demo_trace.md")
     demo_parser.add_argument("--benchmark-output", default="examples/demo_benchmark.jsonl")
 
-    explain_parser = subparsers.add_parser("explain", help="Explicar um caso existente.")
+    explain_parser = subparsers.add_parser("explain", help="Explain an existing case.")
     explain_parser.add_argument("--input", required=True)
     explain_parser.add_argument("--case-id", default=None)
     explain_parser.add_argument("--case-index", type=int, default=0)
@@ -105,7 +105,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 config=config,
                 output=output,
             )
-            print(f"Benchmark gerado: {path}")
+            print(f"Benchmark generated: {path}")
             return 0
 
         if args.command == "validate":
@@ -117,9 +117,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             if errors:
                 for error in errors:
-                    print(f"ERRO: {error}", file=sys.stderr)
+                    print(f"ERROR: {error}", file=sys.stderr)
                 return 1
-            print(f"Benchmark válido: {args.input} ({len(cases)} casos)")
+            print(f"Valid benchmark: {args.input} ({len(cases)} cases)")
             return 0
 
         if args.command == "evaluate":
@@ -147,7 +147,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "demo":
             scenario = Scenario(args.scenario)
             if scenario not in config.scenarios:
-                raise ValueError(f"Cenário desconhecido: {scenario.value}")
+                raise ValueError(f"Unknown scenario: {scenario.value}")
             cases = generate_benchmark(seed=args.seed, cases_per_scenario=1, config=config)
             write_jsonl(cases, args.benchmark_output)
             case = next(item for item in cases if item.scenario is scenario)
@@ -157,21 +157,21 @@ def main(argv: Sequence[str] | None = None) -> int:
                 config=config,
                 output=args.output,
             )
-            print(f"Demonstração criada: {output}")
-            print(f"Benchmark de demonstração: {args.benchmark_output}")
+            print(f"Demo created: {output}")
+            print(f"Demo benchmark: {args.benchmark_output}")
             return 0
 
         if args.command == "explain":
             cases = read_jsonl(args.input)
             if not cases:
-                raise ValueError("O benchmark não contém casos.")
+                raise ValueError("The benchmark contains no cases.")
             if args.case_id:
                 selected = next((item for item in cases if item.case_id == args.case_id), None)
                 if selected is None:
-                    raise ValueError(f"Case ID não encontrado: {args.case_id}")
+                    raise ValueError(f"Case ID not found: {args.case_id}")
             else:
                 if args.case_index < 0 or args.case_index >= len(cases):
-                    raise ValueError("case-index fora do intervalo.")
+                    raise ValueError("case-index is out of range.")
                 selected = cases[args.case_index]
             output = write_case_explanation(
                 selected,
@@ -179,14 +179,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 config=config,
                 output=args.output,
             )
-            print(f"Explicação criada: {output}")
+            print(f"Explanation created: {output}")
             return 0
 
     except (OSError, ValueError, RuntimeError) as exc:
-        print(f"ERRO: {exc}", file=sys.stderr)
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
-    parser.error("Comando não tratado.")
+    parser.error("Unhandled command.")
     return 2
 
 
@@ -210,7 +210,7 @@ def _parse_methods(values: Sequence[str]) -> tuple[MatchingMethod, ...]:
     try:
         return tuple(MatchingMethod(value) for value in values)
     except ValueError as exc:
-        raise ValueError(f"Método desconhecido em {list(values)}") from exc
+        raise ValueError(f"Unknown method in {list(values)}") from exc
 
 
 def _print_outputs(outputs: dict[str, Path]) -> None:

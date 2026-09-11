@@ -1,1 +1,1 @@
-"""Componentes de templates do benchmark."""
+"""Text templates used by the benchmark."""

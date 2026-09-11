@@ -1,4 +1,4 @@
-"""Dados observáveis e resultados de scoring, sem ground truth."""
+"""Observable data and scoring results without ground truth."""
 
 from __future__ import annotations
 

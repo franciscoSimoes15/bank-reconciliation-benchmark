@@ -203,7 +203,7 @@ def near_document_reference(reference: str | None, offset: int) -> str | None:
         return None
     match = re.fullmatch(r"([A-Z]+)-(\d{4})-(\d+)", reference)
     if match is None:
-        raise ValueError(f"Formato de referência latente inesperado: {reference}")
+        raise ValueError(f"Unexpected latent reference format: {reference}")
     number = int(match.group(3)) + offset
     return f"{match.group(1)}-{match.group(2)}-{number:0{len(match.group(3))}d}"
 

@@ -47,7 +47,7 @@ def generate_benchmark(
     of scenarios as an immutable tuple; invalid cases raise before return.
     """
     if cases_per_scenario <= 0:
-        raise ValueError("cases_per_scenario tem de ser positivo.")
+        raise ValueError("cases_per_scenario must be positive.")
     config.validate()
 
     ledger_size = max(cases_per_scenario, _MINIMUM_LEDGER_EVENTS)
@@ -77,7 +77,7 @@ def generate_benchmark(
             for hard_index in range(config.controlled_hard_negative_count)
         )
         if len(identities) != 3:
-            raise RuntimeError("O protocolo requer três identidades de hard negatives.")
+            raise RuntimeError("The protocol requires three hard-negative identities.")
         hard_negatives = build_controlled_hard_negatives(
             true_entry,
             (identities[0], identities[1], identities[2]),
@@ -117,14 +117,14 @@ def generate_benchmark(
 
     expected = cases_per_scenario * len(config.scenarios)
     if len(cases) != expected:
-        raise RuntimeError(f"Foram gerados {len(cases)} casos; eram esperados {expected}.")
+        raise RuntimeError(f"Generated {len(cases)} cases; expected {expected}.")
     errors = validate_benchmark(
         cases,
         config=config,
         expected_cases_per_scenario=cases_per_scenario,
     )
     if errors:
-        raise RuntimeError("Benchmark inválido: " + " | ".join(errors))
+        raise RuntimeError("Invalid benchmark: " + " | ".join(errors))
     return tuple(cases)
 
 
@@ -155,16 +155,16 @@ def validate_case(case: BenchmarkCase, config: ExperimentConfig) -> None:
     """
     if len(case.candidates) != config.candidates_per_case:
         raise ValueError(
-            f"{case.case_id}: {len(case.candidates)} candidatos; "
-            f"esperados {config.candidates_per_case}."
+            f"{case.case_id}: {len(case.candidates)} candidates; "
+            f"expected {config.candidates_per_case}."
         )
     candidate_ids = [candidate.record.id for candidate in case.candidates]
     if len(candidate_ids) != len(set(candidate_ids)):
-        raise ValueError(f"{case.case_id}: existem candidate IDs duplicados.")
+        raise ValueError(f"{case.case_id}: duplicate candidate IDs exist.")
     if not all(_OPAQUE_CANDIDATE_ID.fullmatch(candidate_id) for candidate_id in candidate_ids):
-        raise ValueError(f"{case.case_id}: candidate ID não é opaco ou tem formato inesperado.")
+        raise ValueError(f"{case.case_id}: candidate ID is not opaque or has an unexpected format.")
     if candidate_ids.count(case.true_candidate_id) != 1:
-        raise ValueError(f"{case.case_id}: true candidate ausente ou duplicado.")
+        raise ValueError(f"{case.case_id}: true candidate is missing or duplicated.")
 
     origin_counts = Counter(candidate.origin for candidate in case.candidates)
     expected_origins = {
@@ -173,13 +173,13 @@ def validate_case(case: BenchmarkCase, config: ExperimentConfig) -> None:
         CandidateOrigin.CONTROLLED_HARD_NEGATIVE: config.controlled_hard_negative_count,
     }
     if origin_counts != expected_origins:
-        raise ValueError(f"{case.case_id}: composição de candidatos inválida: {origin_counts}.")
+        raise ValueError(f"{case.case_id}: invalid candidate composition: {origin_counts}.")
 
     true_entry = case.true_candidate_entry()
     if true_entry.origin is not CandidateOrigin.TRUE:
-        raise ValueError(f"{case.case_id}: true_candidate_id não aponta para a origem true.")
+        raise ValueError(f"{case.case_id}: true_candidate_id does not point to a candidate with true origin.")
     if true_entry.source_event_id != case.event_id:
-        raise ValueError(f"{case.case_id}: true candidate não pertence ao FinancialEvent do caso.")
+        raise ValueError(f"{case.case_id}: true candidate does not belong to the case's FinancialEvent.")
 
     hard_kinds = Counter(
         candidate.hard_negative_kind
@@ -187,32 +187,32 @@ def validate_case(case: BenchmarkCase, config: ExperimentConfig) -> None:
         if candidate.origin is CandidateOrigin.CONTROLLED_HARD_NEGATIVE
     )
     if hard_kinds != Counter({kind: 1 for kind in HardNegativeKind}):
-        raise ValueError(f"{case.case_id}: tipos de controlled hard negative inválidos.")
+        raise ValueError(f"{case.case_id}: invalid controlled hard-negative types.")
 
     true_fields = _record_fields(true_entry.record)
     availability = _availability_pattern(true_entry.record)
     for candidate in case.candidates:
         if _availability_pattern(candidate.record) != availability:
             raise ValueError(
-                f"{case.case_id}: padrão de disponibilidade desigual entre candidatos."
+                f"{case.case_id}: inconsistent availability pattern across candidates."
             )
         if candidate.origin is CandidateOrigin.NATURAL_NEGATIVE:
             if candidate.source_event_id == case.event_id:
                 raise ValueError(
-                    f"{case.case_id}: natural negative pertence ao FinancialEvent verdadeiro."
+                    f"{case.case_id}: natural negative belongs to the true FinancialEvent."
                 )
             if candidate.hard_negative_kind is not None:
-                raise ValueError(f"{case.case_id}: natural negative marcado como controlado.")
+                raise ValueError(f"{case.case_id}: natural negative is marked as controlled.")
         if candidate.origin is not CandidateOrigin.TRUE:
             if _record_fields(candidate.record) == true_fields:
                 raise ValueError(
-                    f"{case.case_id}: negative {candidate.record.id} é idêntico ao true candidate."
+                    f"{case.case_id}: negative {candidate.record.id} is identical to the true candidate."
                 )
 
     if case.scenario is Scenario.NATURAL_VARIATION and case.perturbations:
-        raise ValueError(f"{case.case_id}: natural variation não pode declarar perturbações.")
+        raise ValueError(f"{case.case_id}: natural variation cannot declare perturbations.")
     if case.scenario is not Scenario.NATURAL_VARIATION and not case.perturbations:
-        raise ValueError(f"{case.case_id}: cenário experimental sem perturbação declarada.")
+        raise ValueError(f"{case.case_id}: experimental scenario has no declared perturbation.")
 
 
 def validate_benchmark(
@@ -231,7 +231,7 @@ def validate_benchmark(
     case_list = list(cases)
     case_ids = [case.case_id for case in case_list]
     if len(case_ids) != len(set(case_ids)):
-        errors.append("Existem case IDs duplicados.")
+        errors.append("Duplicate case IDs exist.")
 
     for case in case_list:
         try:
@@ -245,7 +245,7 @@ def validate_benchmark(
             actual = scenario_counts.get(scenario, 0)
             if actual != expected_cases_per_scenario:
                 errors.append(
-                    f"{scenario.value}: {actual} casos; esperados {expected_cases_per_scenario}."
+                    f"{scenario.value}: {actual} cases; expected {expected_cases_per_scenario}."
                 )
 
     grouped: dict[str, list[BenchmarkCase]] = defaultdict(list)
@@ -254,15 +254,15 @@ def validate_benchmark(
     for event_id, paired_cases in grouped.items():
         scenario_set = {case.scenario for case in paired_cases}
         if scenario_set != set(config.scenarios):
-            errors.append(f"{event_id}: conjunto de cenários emparelhados incompleto.")
+            errors.append(f"{event_id}: incomplete set of paired scenarios.")
             continue
         baseline = paired_cases[0]
         for paired in paired_cases[1:]:
             if paired.candidates != baseline.candidates:
-                errors.append(f"{event_id}: candidate set ou ordem mudou entre cenários.")
+                errors.append(f"{event_id}: candidate set or order changed between scenarios.")
                 break
             if paired.true_candidate_id != baseline.true_candidate_id:
-                errors.append(f"{event_id}: ground truth mudou entre cenários.")
+                errors.append(f"{event_id}: ground truth changed between scenarios.")
                 break
         natural_case = next(
             case for case in paired_cases if case.scenario is Scenario.NATURAL_VARIATION
@@ -272,7 +272,7 @@ def validate_benchmark(
                 paired.scenario is not Scenario.NATURAL_VARIATION
                 and paired.transaction == natural_case.transaction
             ):
-                errors.append(f"{event_id}: perturbação no-op em {paired.scenario.value}.")
+                errors.append(f"{event_id}: no-op perturbation in {paired.scenario.value}.")
 
     return errors
 
@@ -335,7 +335,7 @@ def _opaque_id(kind: str, seed: int, *parts: object) -> str:
         "event": "event",
     }.get(kind)
     if prefix is None:
-        raise ValueError(f"Tipo de identificador desconhecido: {kind}")
+        raise ValueError(f"Unknown identifier type: {kind}")
     return f"{prefix}_{digest}"
 
 

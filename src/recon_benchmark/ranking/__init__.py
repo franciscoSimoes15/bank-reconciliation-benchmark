@@ -1,1 +1,1 @@
-"""Componentes de ranking do benchmark."""
+"""Benchmark candidate scoring and ranking."""

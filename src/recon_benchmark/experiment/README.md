@@ -59,7 +59,7 @@ For example, `evaluate --cases-per-scenario 3` runs three cases per scenario eve
 
 ## Pipeline sequence
 
-For each seed, the pipeline generates validated cases, writes a per-seed benchmark and evaluates all requested methods. It then writes the consolidated benchmark, aggregates per seed/scenario and overall, and produces metrics CSVs, report, figure and manifest. It returns a mapping of artifact names to paths.
+For each seed, the pipeline generates validated cases, writes a per-seed benchmark and evaluates all requested methods. It then writes the consolidated benchmark, aggregates per seed/scenario and overall, and produces metrics CSVs, report, figures and manifest. It returns a mapping of artifact names to paths. When both M3 and M4 are requested, `paper_comparison_figure` identifies the additional scenario comparison with descriptive error bars.
 
 Artifacts go below the requested root in `benchmarks/`, `results/` and `figures/`. Existing files at the chosen paths are replaced. Source hashing includes nested Python modules and project/configuration files; it records provenance, not a guarantee that results came from a clean committed checkout.
 

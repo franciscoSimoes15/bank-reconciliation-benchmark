@@ -1,70 +1,70 @@
-# Walkthrough do fluxo completo
+# Complete workflow walkthrough
 
-Exemplo:
+Example:
 
 ```bash
 python -m recon_benchmark.cli demo --scenario combined_variation --method field_aware
 ```
 
-## 1. Acontecimento latente
+## 1. Latent event
 
-O gerador cria um `FinancialEvent` com tipo de operação, data, montante e apenas os campos aplicáveis. O objeto e o `event_id` pertencem à geração; não atravessam a fronteira do matcher.
+The generator creates a `FinancialEvent` with an operation type, date, amount and only the applicable fields. The object and `event_id` belong to generation; they do not cross the matcher boundary.
 
-## 2. Duas representações independentes
+## 2. Two independent representations
 
-O mesmo evento é passado separadamente a:
+The same event is passed separately to:
 
 ```text
 render_bank_transaction(event, bank_rng)
 render_accounting_record(event, accounting_rng)
 ```
 
-Os renderers usam convenções e templates diferentes. Portanto, o cenário P0 já contém variação natural, sem copiar descrição, referência formatada ou nome da entidade de um lado para o outro.
+The renderers use different conventions and templates. Scenario P0 therefore already contains natural variation, without copying the description, formatted reference or entity name from one side to the other.
 
-## 3. Ledger e candidatos
+## 3. Ledger and candidates
 
-Primeiro é renderizado um ledger contabilístico. Para cada caso são escolhidos:
+An accounting ledger is rendered first. Each case selects:
 
 ```text
 1 true candidate
-6 natural negatives de outros FinancialEvent do ledger
+6 natural negatives from other FinancialEvent objects in the ledger
 3 controlled hard negatives
 ```
 
-Os negativos controlados cobrem amount+date com referência conflitante, mesma entidade+amount com outro documento e um concorrente plausível em múltiplas evidências. Nos tipos sem referência, a dificuldade usa apenas os campos naturalmente disponíveis.
+Controlled negatives cover amount+date with a conflicting reference, the same entity+amount with another document, and a plausible competitor across multiple fields. For types without a reference, difficulty uses only the naturally available fields.
 
-Os dez candidatos recebem IDs opacos, são baralhados com `random.Random` e ficam congelados para o evento.
+The ten candidates receive opaque IDs, are shuffled using `random.Random` and remain fixed for the event.
 
-## 4. Cenários emparelhados
+## 4. Paired scenarios
 
-O mesmo movimento bancário natural e o mesmo candidate set originam P0–P7. Apenas o movimento observado recebe a perturbação experimental. Cada alteração é comparada com o valor anterior e um no-op lança `PerturbationNoOpError`.
+The same natural bank transaction and candidate set produce P0–P7. Only the observed bank transaction receives the experimental perturbation. Each change is compared with the previous value, and a no-op raises `PerturbationNoOpError`.
 
 ## 5. Matching
 
-O matcher recebe apenas um `BankTransaction`, um `AccountingRecord`, o método e a configuração. Não recebe origem, cenário, perturbações, `event_id` nem `true_candidate_id`.
+The matcher receives only a `BankTransaction`, an `AccountingRecord`, the method and configuration. It does not receive origin, scenario, perturbations, `event_id` or `true_candidate_id`.
 
-M0 faz igualdade normalizada. M1 usa regras binárias tolerantes. M2–M4 usam proximidade gradual para amount/date; M4 compara a referência por componentes e aplica métricas textuais por campo.
+M0 uses normalized equality. M1 uses tolerant binary rules. M2–M4 use gradual proximity for amount/date; M4 compares reference components and applies field-specific text metrics.
 
-## 6. Missing
+## 6. Missing values
 
-Um campo ausente em qualquer lado é excluído:
+A field missing on either side is excluded:
 
 ```text
-score = soma das compatibilidades / campos comparados
+score = sum of compatibility scores / number of compared fields
 ```
 
-O padrão de disponibilidade dos candidatos é igual dentro de cada caso. A avaliação confirma que todos tiveram o mesmo `compared_field_count`.
+Candidates share the same availability pattern within each case. Evaluation confirms that all have the same `compared_field_count`.
 
-## 7. Ranking e avaliação
+## 7. Ranking and evaluation
 
-Depois de todos os scores:
+After all scores have been calculated:
 
-- Unique Top-1 vale 1 apenas se o verdadeiro estiver sozinho no máximo;
-- MRR usa o average rank quando há empate;
-- Tie Rate assinala múltiplos candidatos no maior score.
+- Unique Top-1 equals 1 only if the true candidate is alone at the maximum;
+- MRR uses average rank for ties;
+- Tie Rate records multiple candidates sharing the maximum score.
 
-Só nesta fase o avaliador consulta o ground truth.
+Only at this stage does the evaluator consult ground truth.
 
 ## 8. Outputs
 
-O pipeline escreve o benchmark consolidado, resultados por caso, agregados por seed/cenário, média e desvio-padrão entre seeds, relatório, figura e manifest com configuração, ambiente, commit e hashes.
+The pipeline writes the consolidated benchmark, per-case results, seed/scenario aggregates, cross-seed means and standard deviations, a report, a figure and a manifest containing configuration, environment, commit and hashes.

@@ -40,7 +40,7 @@ def evaluate_case(
     compared_counts = {entry.breakdown.compared_field_count for entry in scored}
     if len(compared_counts) != 1:
         raise ValueError(
-            f"{case.case_id}: candidatos comparados com números de campos diferentes: "
+            f"{case.case_id}: candidates compared using different numbers of fields: "
             f"{sorted(compared_counts)}."
         )
 
@@ -90,7 +90,7 @@ def evaluate_cases(
     method_list = tuple(methods)
     unknown = set(method_list) - set(METHODS)
     if unknown:
-        raise ValueError(f"Métodos desconhecidos: {sorted(str(item) for item in unknown)}")
+        raise ValueError(f"Unknown methods: {sorted(str(item) for item in unknown)}")
     return tuple(
         evaluate_case(case, method=method, config=config)
         for case in cases
@@ -117,7 +117,7 @@ def average_rank(
     )
     equal = sum(_same_score(score, target_score, epsilon) for score in score_list)
     if equal == 0:
-        raise ValueError("O target_score não existe na lista de scores.")
+        raise ValueError("target_score is not present in the score list.")
     first_position = better + 1
     last_position = better + equal
     return (first_position + last_position) / 2.0

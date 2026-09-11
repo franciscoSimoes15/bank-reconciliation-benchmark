@@ -6,7 +6,7 @@ This layer answers: **where did the true candidate finish, and how ambiguous was
 |---|---|
 | [models.py](models.py) | `CaseEvaluation` for one case/method; `AggregateMetrics` for a seed/method group |
 | [evaluation.py](evaluation.py) | Call the matcher, evaluate truth, handle ties and aggregate within seeds |
-| [reporting.py](reporting.py) | Aggregate across seeds and write CSVs, report, figure and manifest |
+| [reporting.py](reporting.py) | Aggregate across seeds and write CSVs, report, figures and manifest |
 
 ## From compatibility to an evaluation result
 
@@ -68,6 +68,12 @@ assert isclose((1 + 0.5 + 2 / 3 + 1 / 3) / 4, 0.625)
 | `experiment_manifest.json` | Configuration, effective run, versions, hashes and available Git state |
 
 `predicted_candidate_id` is `None` for a top tie. M4-D is included in the metric CSVs and global report, but excluded from the primary-method scenario table and figure. Standard deviations across seeds are not confidence intervals, and synthetic results do not establish production performance.
+
+When M3 and M4 are both evaluated, `create_paper_comparison_figure()` also reads
+`summary.csv` to plot their mean Unique Top-1 and sample standard deviation in
+the eight scenarios. It writes `figures/method_comparison_by_scenario.png` for
+the paper. This figure is an additional view of existing metrics; it does not
+change evaluation or select parameters.
 
 Tests: [test_evaluation.py](../../../tests/test_evaluation.py), [test_pipeline.py](../../../tests/test_pipeline.py).
 

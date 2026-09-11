@@ -1,4 +1,4 @@
-"""Mapeamento dos nomes descritivos para os códigos usados nos outputs."""
+"""Map descriptive names to the codes used in outputs."""
 
 from collections.abc import Mapping
 

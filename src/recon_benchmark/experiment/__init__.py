@@ -1,1 +1,1 @@
-"""Componentes de experiment do benchmark."""
+"""Benchmark experiment configuration and execution."""

@@ -1,4 +1,4 @@
-"""Resultados por caso e métricas agregadas da avaliação."""
+"""Per-case evaluation results and aggregated metrics."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Ordenação dos candidatos pelos scores observáveis, sem ground truth."""
+"""Order candidates by observable scores without ground truth."""
 
 from __future__ import annotations
 

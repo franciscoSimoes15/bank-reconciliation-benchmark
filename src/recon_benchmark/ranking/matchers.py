@@ -37,7 +37,7 @@ def score_pair(
     or ground truth. The evaluator checks equal field counts across candidates.
     """
     if method not in METHODS:
-        raise ValueError(f"Método desconhecido: {method}")
+        raise ValueError(f"Unknown method: {method}")
 
     scores: dict[str, float] = {
         "amount": _amount_score(transaction.amount, candidate.amount, method, config),
@@ -68,7 +68,7 @@ def score_pair(
         scores[field_name] = _text_score(field_name, left, right, method, config)
 
     if not scores:
-        raise ValueError("Não existem campos disponíveis para calcular o score.")
+        raise ValueError("No fields are available to calculate the score.")
     total = sum(scores.values()) / len(scores)
     return ScoreBreakdown(
         method=method,
@@ -199,7 +199,7 @@ def _text_score(
             return jaro_winkler_similarity(left, right)
         if field_name == "description":
             return qgram_cosine_similarity(left, right, config.qgram_size)
-    raise ValueError(f"Combinação method/field não suportada: {method.value}/{field_name}")
+    raise ValueError(f"Unsupported method/field combination: {method.value}/{field_name}")
 
 
 def _parse_reference(value: str) -> ReferenceComponents | None:

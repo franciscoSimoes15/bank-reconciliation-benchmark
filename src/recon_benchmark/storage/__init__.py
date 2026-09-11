@@ -1,1 +1,1 @@
-"""Componentes de storage do benchmark."""
+"""Benchmark storage and serialization."""

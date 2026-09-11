@@ -22,7 +22,7 @@ def qgram_counts(value: str, q: int = 3) -> Counter[str]:
     as one fragment; reject q below 1.
     """
     if q < 1:
-        raise ValueError("q tem de ser >= 1.")
+        raise ValueError("q must be >= 1.")
     padded = f"^{value}$"
     if len(padded) <= q:
         return Counter({padded: 1})

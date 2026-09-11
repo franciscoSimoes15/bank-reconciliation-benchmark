@@ -1,4 +1,4 @@
-"""Convenções textuais da fonte contabilística."""
+"""Text conventions for the accounting source."""
 
 from recon_benchmark.domain.models import OperationType
 

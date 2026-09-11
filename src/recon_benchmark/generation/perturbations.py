@@ -55,7 +55,7 @@ def apply_perturbation(
         return _missing_information(transaction, scenario_index)
     if scenario is Scenario.COMBINED_VARIATION:
         return _combined_variation(transaction, rng)
-    raise ValueError(f"Cenário desconhecido: {scenario}")
+    raise ValueError(f"Unknown scenario: {scenario}")
 
 
 def perturb_reference(reference: str, operation: str, rng: random.Random) -> str:
@@ -99,7 +99,7 @@ def perturb_reference(reference: str, operation: str, rng: random.Random) -> str
         characters[position] = replacement
         return "".join(characters)
 
-    raise ValueError(f"Operação de referência desconhecida: {operation}")
+    raise ValueError(f"Unknown reference operation: {operation}")
 
 
 def _amount_variation(
@@ -144,7 +144,7 @@ def _reference_variation(
         != transaction.reference
     )
     if not alternatives:
-        raise PerturbationNoOpError("Nenhuma perturbação de referência alterou o valor.")
+        raise PerturbationNoOpError("No reference perturbation changed the value.")
     operation, value = rng.choice(alternatives)
     changed = replace(transaction, reference=value)
     return _checked(transaction, changed, f"reference:{operation}")
@@ -176,7 +176,7 @@ def _entity_variation(
     alternatives.append(("case_accent", accented.swapcase()))
     changed_alternatives = tuple(item for item in alternatives if item[1] != value)
     if not changed_alternatives:
-        raise PerturbationNoOpError("Nenhuma perturbação de entidade alterou o valor.")
+        raise PerturbationNoOpError("No entity perturbation changed the value.")
     operation, changed_value = rng.choice(changed_alternatives)
     changed = replace(transaction, counterparty=changed_value)
     return _checked(transaction, changed, f"entity:{operation}")
@@ -219,7 +219,7 @@ def _description_variation(
 
     changed_alternatives = tuple(item for item in alternatives if item[1] != value)
     if not changed_alternatives:
-        raise PerturbationNoOpError("Nenhuma perturbação de descrição alterou o valor.")
+        raise PerturbationNoOpError("No description perturbation changed the value.")
     operation, changed_value = rng.choice(changed_alternatives)
     changed = replace(transaction, description=changed_value)
     return _checked(transaction, changed, f"description:{operation}")
@@ -239,7 +239,7 @@ def _missing_information(
     if transaction.counterparty is not None:
         alternatives.append(("missing:counterparty", replace(transaction, counterparty=None)))
     if not alternatives:
-        raise PerturbationNoOpError("O movimento não contém informação opcional removível.")
+        raise PerturbationNoOpError("The transaction contains no removable optional information.")
     tag, changed = alternatives[scenario_index % len(alternatives)]
     return _checked(transaction, changed, tag)
 
@@ -269,7 +269,7 @@ def _combined_variation(
             current, new_tags = _description_variation(current, rng)
         tags.extend(new_tags)
     if current == transaction or len(tags) != 3:
-        raise PerturbationNoOpError("A perturbação combinada não alterou três famílias.")
+        raise PerturbationNoOpError("The combined perturbation did not change three families.")
     return current, tuple(tags)
 
 
@@ -280,7 +280,7 @@ def _checked(
 ) -> tuple[BankTransaction, tuple[str, ...]]:
     """Return a changed record and its tag, raising if it equals the original record."""
     if changed == original:
-        raise PerturbationNoOpError(f"Perturbação no-op detetada: {tag}")
+        raise PerturbationNoOpError(f"No-op perturbation detected: {tag}")
     return changed, (tag,)
 
 

@@ -1,26 +1,26 @@
-# Fundamentação metodológica
+# Methodological foundations
 
-## 1. De onde vêm as ideias
+## 1. Sources of the ideas
 
-O projeto separa três origens:
+The project distinguishes three sources:
 
-| Origem | Função |
+| Source | Role |
 |---|---|
-| Estudo dos 15 motores comerciais | Identificar sinais, tolerâncias, ruído, ambiguidade e workflows relevantes. |
-| Literatura científica | Escolher famílias de comparadores e métricas públicas. |
-| Decisão de projeto | Definir tamanho, seeds, perturbações, thresholds e hard negatives. |
+| Study of 15 commercial engines | Identify relevant signals, tolerances, noise, ambiguity and workflows. |
+| Scientific literature | Choose public comparator families and metrics. |
+| Project design decisions | Define size, seeds, perturbations, thresholds and hard negatives. |
 
-Os produtos comerciais não são usados como baselines de performance. Muitos descrevem capacidades funcionais sem revelar fórmula, pesos ou algoritmo interno.
+Commercial products are not used as performance baselines. Many describe functional capabilities without disclosing their formula, weights or internal algorithm.
 
 ## 2. Record linkage
 
-O enquadramento base vem de **Fellegi e Sunter**, que formalizaram record linkage como comparação de pares de registos através de evidências por atributo e uma regra de decisão.
+The basic framework comes from **Fellegi and Sunter**, who formalized record linkage as the comparison of record pairs through attribute-level evidence and a decision rule.
 
-Referência:
+Reference:
 
 - Fellegi, I. P., & Sunter, A. B. (1969). *A Theory for Record Linkage*. Journal of the American Statistical Association, 64(328), 1183–1210. DOI: `10.1080/01621459.1969.10501049`.
 
-No projeto, cada par produz um vetor:
+In this project, each pair produces a vector:
 
 ```text
 amount_score
@@ -32,11 +32,11 @@ description_score
 
 ## 3. Jaro-Winkler
 
-Jaro-Winkler é uma família clássica de comparadores usada em record linkage, especialmente adequada a nomes e strings curtas com typos ou transposições.
+Jaro-Winkler is a classical family of comparators used in record linkage, particularly for names and short strings with typos or transpositions.
 
-O projeto usa a implementação mantida do `RapidFuzz`, evitando reimplementar uma fórmula sensível a erros.
+The project uses the maintained `RapidFuzz` implementation to avoid reimplementing an error-prone formula.
 
-Referências de contexto:
+Background references:
 
 - U.S. Census Bureau, *An Adaptive String Comparator for Record Linkage*.
 - U.S. Census Bureau, *Evaluating String Comparator Performance for Record Linkage*.
@@ -44,67 +44,67 @@ Referências de contexto:
 
 ## 4. Character q-grams
 
-Ukkonen formalizou approximate string matching com q-grams: uma string é representada através de fragmentos locais de comprimento `q`.
+Ukkonen formalized approximate string matching with q-grams: a string is represented through local fragments of length `q`.
 
-Este projeto usa `q=3`, boundary markers e cosine similarity sobre contagens.
+This project uses `q=3`, boundary markers and cosine similarity over counts.
 
-Referência:
+Reference:
 
 - Ukkonen, E. (1992). *Approximate string-matching with q-grams and maximal matches*. Theoretical Computer Science, 92(1), 191–211. DOI: `10.1016/0304-3975(92)90143-4`.
 
-## 5. Comparação de métricas
+## 5. Comparing metrics
 
-Cohen, Ravikumar e Fienberg compararam várias métricas para matching de nomes e registos. Essa literatura sustenta a decisão de não presumir que uma única métrica textual seja ideal para todos os campos.
+Cohen, Ravikumar and Fienberg compared several metrics for matching names and records. This literature supports the decision not to assume that a single text metric is ideal for every field.
 
-Por isso o projeto compara:
+The project therefore compares:
 
-- Jaro-Winkler aplicado uniformemente;
-- q-gram aplicado uniformemente;
-- uma combinação field-aware.
+- uniformly applied Jaro-Winkler;
+- uniformly applied q-grams;
+- a field-aware combination.
 
-## 6. Métricas de ranking
+## 6. Ranking metrics
 
-MRR é usado quando interessa a posição do primeiro resultado correto. Como existe exatamente um verdadeiro, a posição usa o average rank quando há empate:
+MRR is used when the position of the first correct result matters. As there is exactly one true candidate, its position uses average rank for ties:
 
 ```text
-RR = 1 / posição do candidato correto
-MRR = média dos RR
+RR = 1 / position of the correct candidate
+MRR = mean of RR values
 ```
 
-A definição segue a tradição TREC/NIST. O projeto acrescenta **Unique Top-1**, porque em reconciliação financeira um empate no topo não representa uma decisão automática inequívoca.
+The definition follows the TREC/NIST tradition. The project adds **Unique Top-1**, because a top tie in financial reconciliation does not represent an unambiguous automatic decision.
 
-## 7. Domínio de reconciliação bancária
+## 7. Bank reconciliation domain
 
-Trabalho recente formula reconciliação bancária como problema de representação, record linkage e link prediction:
+Recent work formulates bank reconciliation as a representation, record-linkage and link-prediction problem:
 
 - Munoz, J., Jalili, M., & Tafakori, L. (2025). *Enhancing Bookkeeper Decision Support Through Graph Representation Learning for Bank Reconciliation*. The Journal of Finance and Data Science, 100170. DOI: `10.1016/j.jfds.2025.100170`.
 
-O nosso benchmark é deliberadamente mais pequeno e transparente: não treina modelos e limita-se a matching 1:1.
+This benchmark is deliberately smaller and transparent: it trains no models and is limited to 1:1 matching.
 
-## 8. O que é uma decisão específica deste projeto
+## 8. Project-specific decisions
 
-Não vem diretamente de um paper:
+The following choices do not come directly from a paper:
 
-- 8 cenários;
-- 100 casos por cenário;
+- 8 scenarios;
+- 100 cases per scenario;
 - 5 evaluation seeds;
-- 10 candidatos por caso;
-- ±0,10 €;
-- ±3 dias;
-- 6 natural negatives de outros eventos e 3 controlled hard negatives;
-- média simples dos campos disponíveis, com disponibilidade igual dentro do caso;
-- entity/legal suffix list limitada a `LDA` e `SA`.
+- 10 candidates per case;
+- ±€0.10;
+- ±3 days;
+- 6 natural negatives from other events and 3 controlled hard negatives;
+- a simple mean of available fields, with equal availability within a case;
+- an entity legal-suffix list limited to `LDA` and `SA`.
 
-Estas decisões são parâmetros do protocolo, congelados antes de observar os resultados finais. Não são apresentadas como valores universais para reconciliação bancária.
+These decisions are protocol parameters, frozen before observing the final results. They are not presented as universal values for bank reconciliation.
 
-## 9. Separação entre geração e matching
+## 9. Separation of generation and matching
 
-O `FinancialEvent` latente gera independentemente uma vista bancária e uma vista contabilística. O matcher nunca recebe esse evento, o ground truth, o cenário, as perturbações ou a origem do candidato. Assim, os resultados medem apenas a compatibilidade entre campos observáveis.
+The latent `FinancialEvent` independently generates a bank view and an accounting view. The matcher never receives that event, ground truth, scenario, perturbations or candidate origin. Results therefore measure only compatibility between observable fields.
 
-Os mesmos eventos e candidate sets são reutilizados nos oito cenários. A comparação entre cenários é, por isso, emparelhada e não mistura amostras diferentes.
+The same events and candidate sets are reused across all eight scenarios. Scenario comparisons are therefore paired and do not mix different samples.
 
-## 10. Proximidade e missing
+## 10. Proximity and missing values
 
-M2–M4 usam proximidade gradual para amount/date, ao contrário da regra binária tolerante de M1. M4 trata a referência como estrutura prefixo/ano/número quando possível e usa Jaro-Winkler apenas como fallback.
+M2–M4 use gradual proximity for amount/date, unlike M1's tolerant binary rule. M4 treats the reference as a prefix/year/number structure where possible and uses Jaro-Winkler only as a fallback.
 
-Missing exclui o campo da agregação, não acrescenta um desacordo. O benchmark preserva a disponibilidade entre candidatos e valida explicitamente o número de campos comparados.
+A missing value excludes the field from aggregation rather than adding a disagreement. The benchmark preserves availability across candidates and explicitly validates the number of compared fields.

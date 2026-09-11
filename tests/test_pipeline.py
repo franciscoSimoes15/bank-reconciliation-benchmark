@@ -18,6 +18,7 @@ def test_small_pipeline_writes_and_validates_all_required_outputs(tmp_path: Path
     config = ExperimentConfig()
     methods = (
         MatchingMethod.NORMALIZED_EXACT,
+        MatchingMethod.CHARACTER_TRIGRAM_TEXT,
         MatchingMethod.FIELD_AWARE,
         MatchingMethod.FIELD_AWARE_WITHOUT_DESCRIPTION,
     )
@@ -39,6 +40,7 @@ def test_small_pipeline_writes_and_validates_all_required_outputs(tmp_path: Path
         "experiment_manifest",
         "manifest",
         "figure",
+        "paper_comparison_figure",
     }
     assert all(path.exists() and path.stat().st_size > 0 for path in outputs.values())
     assert (tmp_path / "benchmarks" / "seed_7.jsonl").exists()
@@ -55,7 +57,7 @@ def test_small_pipeline_writes_and_validates_all_required_outputs(tmp_path: Path
     per_case_rows = _csv_rows(outputs["per_case"])
     assert len(per_case_rows) == 8 * len(methods)
     assert all(int(row["compared_field_count"]) >= 2 for row in per_case_rows)
-    assert {row["method_code"] for row in per_case_rows} == {"M0", "M4", "M4-D"}
+    assert {row["method_code"] for row in per_case_rows} == {"M0", "M3", "M4", "M4-D"}
 
     scenario_rows = _csv_rows(outputs["by_scenario"])
     assert len(scenario_rows) == 8 * len(methods)
@@ -66,7 +68,7 @@ def test_small_pipeline_writes_and_validates_all_required_outputs(tmp_path: Path
     assert sum(row["scenario"] == "ALL" for row in summary_rows) == len(methods)
     assert _csv_rows(outputs["operation_diagnostics"])
     assert _csv_rows(outputs["amount_pair_diagnostics"])
-    assert "diagnóstica posterior" in outputs["report"].read_text(encoding="utf-8")
+    assert "Post-hoc diagnostics" in outputs["report"].read_text(encoding="utf-8")
 
     manifest = json.loads(outputs["experiment_manifest"].read_text(encoding="utf-8"))
     assert manifest["effective_run"]["seeds"] == [7]

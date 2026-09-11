@@ -1,14 +1,14 @@
-# Explicação do caso `case_4a8fef496eea5c328099`
+# Explanation of case `case_4a8fef496eea5c328099`
 
 - Seed: `7`
-- Cenário: `combined_variation` (P7)
-- Perturbações: `entity:typo, amount:+0.25, reference:separators`
-- Método: `field_aware` (M4)
-- Ground truth usado apenas na avaliação: `cand_fa3851642bc36ebf11d8`
+- Scenario: `combined_variation` (P7)
+- Perturbations: `entity:typo, amount:+0.25, reference:separators`
+- Method: `field_aware` (M4)
+- Ground truth used only for evaluation: `cand_fa3851642bc36ebf11d8`
 
-## Movimento bancário recebido pelo matcher
+## Bank transaction received by the matcher
 
-| Campo | Raw | Normalizado |
+| Field | Raw | Normalized |
 |---|---|---|
 | Amount | `5261.52` | `5261.52` |
 | Date | `2026-01-11` | `2026-01-11` |
@@ -16,11 +16,11 @@
 | Counterparty | `Horizonte Enegr` | `horizonte enegr` |
 | Description | `TRF SEPA RECEBIDA CONTA EMPRESA` | `trf sepa recebida conta empresa` |
 
-## Ranking dos candidatos
+## Candidate ranking
 
-| Rank visual | Candidato | True? | Score | Campos | Amount | Date | Reference | Entity | Description | Excluídos |
+| Display rank | Candidate | True? | Score | Fields | Amount | Date | Reference | Entity | Description | Excluded |
 |---:|---|:---:|---:|---:|---:|---:|---:|---:|---:|---|
-| 1 | `cand_fa3851642bc36ebf11d8` | sim | 0.812416 | 5 | 0.9952 | 1.0000 | 1.0000 | 0.9631 | 0.1037 | — |
+| 1 | `cand_fa3851642bc36ebf11d8` | yes | 0.812416 | 5 | 0.9952 | 1.0000 | 1.0000 | 0.9631 | 0.1037 | — |
 | 2 | `cand_977c5ed6919d0ab4ac0d` |  | 0.665750 | 5 | 0.9952 | 0.9667 | 0.3000 | 0.9631 | 0.1037 | — |
 | 3 | `cand_15b9caea5a85c994de52` |  | 0.625750 | 5 | 0.9952 | 0.7667 | 0.3000 | 0.9631 | 0.1037 | — |
 | 4 | `cand_039c54d96f5cce081eca` |  | 0.546461 | 5 | 0.9952 | 1.0000 | 0.3000 | 0.4037 | 0.0334 | — |
@@ -31,6 +31,6 @@
 | 9 | `cand_032b72743ce978f4687f` |  | 0.169945 | 5 | 0.0000 | 0.0000 | 0.3000 | 0.5164 | 0.0334 | — |
 | 10 | `cand_c54a4c0d3e32b17fa882` |  | 0.150921 | 5 | 0.0000 | 0.0000 | 0.1500 | 0.4250 | 0.1796 | — |
 
-O score final é a média simples dos campos disponíveis. Um campo ausente em qualquer lado é excluído. A geração valida que todos os candidatos do caso são comparados no mesmo número de campos.
+The final score is the unweighted mean of available fields. A field missing on either side is excluded. Generation validates that every candidate in the case is compared using the same number of fields.
 
-O matcher recebe apenas o movimento bancário e um registo contabilístico. `event_id`, cenário, perturbações, origem e ground truth só são consultados depois do scoring.
+The matcher receives only the bank transaction and one accounting record. `event_id`, scenario, perturbations, origin and ground truth are consulted only after scoring.

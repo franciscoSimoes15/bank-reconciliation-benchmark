@@ -5,11 +5,13 @@ This analysis was added after reviewing the published experiment at
 candidate sets, scores, methods, configuration, and evaluation seeds. No threshold
 or generator decision was selected or changed using these diagnostics.
 
-The original outputs and execution manifests remain in `results/` and
-`benchmarks/`. The additional CSVs and expanded report are archived separately in
-[`results/posthoc/`](../results/posthoc/). A new `run-final` writes those diagnostic
-CSVs alongside its primary outputs and includes the breakdown in its report.
-Use a separate output directory to preserve the historical archive:
+The current English release regenerates reports and execution manifests in
+`results/` and `benchmarks/`, with the additional analysis also available in
+[`results/posthoc/`](../results/posthoc/). Historical outputs remain available
+through Git history and the [reproduction evidence](REPRODUCIBILITY.md).
+`run-final` writes the diagnostic CSVs alongside its primary outputs and includes
+the breakdown in its report. Use a separate output directory to retain the
+checked-in release artifacts:
 
 ```powershell
 python -m recon_benchmark.cli run-final --output-root ../reviewed-run
@@ -62,8 +64,8 @@ candidate construction and is not general evidence of robustness to amount error
 
 - Displayed percentages and four-place metrics now use decimal `ROUND_HALF_UP`.
   The stored proportion 0.14175 therefore displays as 14.18%, consistently with
-  the paper. Historical report bytes are preserved; primary metric values are
-  unchanged.
+  the paper. Historical report bytes remain available through Git history;
+  primary metric values are unchanged.
 - Hard-negative semantic checks cover all six operations and eight scenarios.
   Development-seed characterization tests document the bank-fee ambiguity and
   equal amount contributions without tuning evaluation results.

@@ -1,4 +1,4 @@
-"""Interface de linha de comandos e entry point compatível."""
+"""Command-line interface and compatible entry point."""
 
 from recon_benchmark.cli.main import main
 

@@ -242,7 +242,7 @@ class BenchmarkCase:
         )
         if len(matches) != 1:
             raise ValueError(
-                f"{self.case_id}: eram esperados 1 true candidate, foram encontrados {len(matches)}."
+                f"{self.case_id}: expected 1 true candidate, found {len(matches)}."
             )
         return matches[0]
 

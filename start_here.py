@@ -1,4 +1,4 @@
-"""Gera explicações de um caso resolvido e do caso mais difícil da amostra."""
+"""Generate explanations for a successful case and the most challenging case in the sample."""
 
 from __future__ import annotations
 
@@ -56,6 +56,6 @@ if __name__ == "__main__":
         output=ROOT / "examples" / "demo_challenging.md",
     )
 
-    print(f"Benchmark de demonstração: {benchmark_path}")
-    print(f"Caso resolvido: {success_path}")
-    print(f"Caso mais difícil da amostra: {challenging_path}")
+    print(f"Demo benchmark: {benchmark_path}")
+    print(f"Successful case: {success_path}")
+    print(f"Most challenging case in the sample: {challenging_path}")

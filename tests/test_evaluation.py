@@ -122,7 +122,7 @@ def test_evaluation_rejects_unequal_field_availability_between_candidates() -> N
         true_candidate_id=true_with_reference.id,
         perturbations=case.perturbations,
     )
-    with pytest.raises(ValueError, match="números de campos diferentes"):
+    with pytest.raises(ValueError, match="different numbers of fields"):
         evaluate_case(
             unfair,
             method=MatchingMethod.FIELD_AWARE,

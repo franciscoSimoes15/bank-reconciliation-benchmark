@@ -1,4 +1,4 @@
-"""Executa o protocolo final a partir de qualquer diretório."""
+"""Run the final protocol from any directory."""
 
 from __future__ import annotations
 

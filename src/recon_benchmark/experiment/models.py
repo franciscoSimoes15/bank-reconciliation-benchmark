@@ -1,4 +1,4 @@
-"""Parâmetros imutáveis e invariantes da experiência."""
+"""Immutable experiment parameters and invariants."""
 
 from __future__ import annotations
 
@@ -44,39 +44,39 @@ class ExperimentConfig:
         sets. This validates parameters; it does not generate or inspect any cases.
         """
         if self.cases_per_scenario <= 0:
-            raise ValueError("cases_per_scenario tem de ser positivo.")
+            raise ValueError("cases_per_scenario must be positive.")
         if self.natural_negative_count != 6:
-            raise ValueError("O protocolo exige exatamente 6 natural negatives.")
+            raise ValueError("The protocol requires exactly 6 natural negatives.")
         if self.controlled_hard_negative_count != 3:
-            raise ValueError("O protocolo exige exatamente 3 controlled hard negatives.")
+            raise ValueError("The protocol requires exactly 3 controlled hard negatives.")
         expected_candidates = 1 + self.natural_negative_count + self.controlled_hard_negative_count
         if self.candidates_per_case != expected_candidates:
             raise ValueError(
-                "O protocolo exige exatamente 10 candidatos: "
+                "The protocol requires exactly 10 candidates: "
                 "1 true + 6 natural negatives + 3 controlled hard negatives."
             )
         if not self.evaluation_seeds:
-            raise ValueError("É necessária pelo menos uma evaluation seed.")
+            raise ValueError("At least one evaluation seed is required.")
         if len(self.evaluation_seeds) != len(set(self.evaluation_seeds)):
-            raise ValueError("As evaluation seeds não podem estar duplicadas.")
+            raise ValueError("Evaluation seeds must not contain duplicates.")
         if self.amount_tolerance < 0:
-            raise ValueError("amount_tolerance não pode ser negativa.")
+            raise ValueError("amount_tolerance must not be negative.")
         if self.date_tolerance_days < 0:
-            raise ValueError("date_tolerance_days não pode ser negativo.")
+            raise ValueError("date_tolerance_days must not be negative.")
         if self.amount_similarity_absolute_scale <= 0:
-            raise ValueError("amount_similarity_absolute_scale tem de ser positiva.")
+            raise ValueError("amount_similarity_absolute_scale must be positive.")
         if self.amount_similarity_relative_scale <= 0:
-            raise ValueError("amount_similarity_relative_scale tem de ser positiva.")
+            raise ValueError("amount_similarity_relative_scale must be positive.")
         if self.date_similarity_scale_days <= 0:
-            raise ValueError("date_similarity_scale_days tem de ser positivo.")
+            raise ValueError("date_similarity_scale_days must be positive.")
         if self.qgram_size < 1:
-            raise ValueError("qgram_size tem de ser >= 1.")
+            raise ValueError("qgram_size must be >= 1.")
         if self.tie_epsilon < 0:
-            raise ValueError("tie_epsilon não pode ser negativo.")
+            raise ValueError("tie_epsilon must not be negative.")
         if self.scenarios != DEFAULT_SCENARIOS:
-            raise ValueError("O protocolo exige os oito cenários na ordem P0–P7.")
+            raise ValueError("The protocol requires all eight scenarios in P0–P7 order.")
         if self.methods != DEFAULT_METHODS:
-            raise ValueError("O protocolo exige M0–M4 e a ablation M4-D configurados.")
+            raise ValueError("The protocol requires M0–M4 and the M4-D ablation to be configured.")
 
     def to_dict(self) -> dict[str, object]:
         """Return JSON-compatible parameters for the experiment manifest.

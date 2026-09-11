@@ -1,1 +1,1 @@
-"""Componentes de metrics do benchmark."""
+"""Benchmark evaluation metrics and reporting."""

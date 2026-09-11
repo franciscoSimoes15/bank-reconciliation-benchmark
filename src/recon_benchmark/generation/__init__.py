@@ -1,1 +1,1 @@
-"""Componentes de generation do benchmark."""
+"""Synthetic benchmark generation."""

@@ -241,13 +241,13 @@ def write_markdown_report(
     )
 
     lines = [
-        "# Resultados do benchmark",
+        "# Benchmark results",
         "",
-        "Os valores são médias entre evaluation seeds; o desvio-padrão amostral está em `summary.csv`.",
+        "Values are means across evaluation seeds; sample standard deviations are recorded in `summary.csv`.",
         "",
-        "## Resumo global",
+        "## Overall summary",
         "",
-        "| Método | Código | Unique Top-1 | MRR | Tie Rate |",
+        "| Method | Code | Unique Top-1 | MRR | Tie Rate |",
         "|---|---|---:|---:|---:|",
     ]
     for row in sorted(overall, key=lambda item: item["method_code"]):
@@ -260,9 +260,9 @@ def write_markdown_report(
     lines.extend(
         [
             "",
-            "## Unique Top-1 por cenário",
+            "## Unique Top-1 by scenario",
             "",
-            "| Método | " + " | ".join(scenarios) + " |",
+            "| Method | " + " | ".join(scenarios) + " |",
             "|---|" + "---:|" * len(scenarios),
         ]
     )
@@ -275,14 +275,14 @@ def write_markdown_report(
     lines.extend(
         [
             "",
-            "## Interpretação",
+            "## Interpretation",
             "",
-            "Unique Top-1 exige que o candidato verdadeiro seja o único no maior score. "
-            "MRR usa a posição média nos empates e Tie Rate mede a proporção de casos com "
-            "mais de um candidato no maior score.",
+            "Unique Top-1 requires the true candidate to be the sole highest-scoring candidate. "
+            "MRR uses the average rank for ties, and Tie Rate measures the proportion of cases "
+            "with multiple candidates sharing the highest score.",
             "",
-            "O benchmark mede ranking sintético 1:1 quando o candidato verdadeiro está presente. "
-            "Não mede auto-reconciliação, calibração, relações 1:N/N:1/N:N nem desempenho em produção.",
+            "The benchmark measures synthetic 1:1 ranking with the true candidate present. "
+            "It does not measure automatic reconciliation, calibration, 1:N/N:1/N:N relations, or production performance.",
             "",
         ]
     )
@@ -301,22 +301,22 @@ def _diagnostic_report_lines(
         rows = [row for row in _read_csv(operation_csv) if row["aggregation"] == "pooled_cases"]
         lookup = {(row["operation_group"], row["method_code"]): row for row in rows}
         labels = {
-            "supplier_transfer": "Transferência a fornecedor",
-            "customer_receipt": "Recebimento de cliente",
-            "direct_debit": "Débito direto",
-            "card_payment": "Pagamento com cartão",
-            "bank_fee": "Comissões bancárias",
-            "tax_payment": "Pagamento fiscal",
-            "non_bank_fee": "Restantes operações (subtotal)",
+            "supplier_transfer": "Supplier transfer",
+            "customer_receipt": "Customer receipt",
+            "direct_debit": "Direct debit",
+            "card_payment": "Card payment",
+            "bank_fee": "Bank fees",
+            "tax_payment": "Tax payment",
+            "non_bank_fee": "Other operations (subtotal)",
             "ALL": "Total",
         }
         lines.extend([
-            "", "## Análise diagnóstica posterior por operação", "",
-            "Proporções agrupadas dos casos existentes, incluindo os cenários emparelhados. "
-            "São uma análise descritiva posterior ao freeze; não são novas amostras independentes. "
-            "O CSV inclui também resultados por seed e média/desvio-padrão entre seeds. "
-            "Os subtotais sobrepõem-se às linhas por operação.", "",
-            "| Operação | Eventos base | Casos | M4 Unique Top-1 | M4-D Unique Top-1 |",
+            "", "## Post-hoc diagnostics by operation", "",
+            "Pooled proportions from the existing cases, including paired scenarios. "
+            "This is a descriptive analysis performed after the protocol freeze, not new independent samples. "
+            "The CSV also includes per-seed results and means/sample standard deviations across seeds. "
+            "Subtotals overlap with the individual operation rows.", "",
+            "| Operation | Base events | Cases | M4 Unique Top-1 | M4-D Unique Top-1 |",
             "|---|---:|---:|---:|---:|",
         ])
         for group, label in labels.items():
@@ -330,29 +330,29 @@ def _diagnostic_report_lines(
             lines.append(f"| {label} | {available['base_events']} | {available['cases']} | " + " | ".join(values) + " |")
         lines.extend([
             "",
-            "Nas comissões, um hard negative partilha montante, data, referência ausente e "
-            "entidade ausente com o verdadeiro, mas a descrição é forçada a diferir. M4-D "
-            "empata necessariamente esses candidatos. Cada fonte escolhe apenas dois templates "
-            "por operação, sem um facto narrativo específico do evento. Desempatar com descrição "
-            "não demonstra, por si só, informação identificadora adicional.",
+            "For bank fees, one hard negative shares the true candidate's amount, date, absent reference, "
+            "and absent entity, while its description is forced to differ. M4-D necessarily ties "
+            "these candidates. Each source samples from only two templates per operation, without "
+            "an event-specific narrative fact. Breaking a tie using description does not, by itself, "
+            "demonstrate additional identifying information.",
         ])
     if amount_pairs_csv is not None:
         rows = [row for row in _read_csv(amount_pairs_csv) if row["aggregation"] == "pooled_pairs"]
         lines.extend([
-            "", "## Diagnóstico emparelhado de montante", "",
-            "Comparação de cada variante de montante com o seu caso natural. As contagens "
-            "referem-se à posição média do verdadeiro, Unique Top-1 e tamanho do empate no topo; "
-            "não medem alterações de toda a ordenação.", "",
-            "| Método | Pares | Posição alterada | Unique Top-1 alterado | Empate no topo alterado |",
+            "", "## Paired amount diagnostics", "",
+            "Each amount variant is compared with its natural-variation case. Counts refer to "
+            "the true candidate's average rank, Unique Top-1, and the number of candidates tied "
+            "at the top; they do not measure changes to the complete ordering.", "",
+            "| Method | Pairs | Rank changed | Unique Top-1 changed | Top tie size changed |",
             "|---|---:|---:|---:|---:|",
         ])
         for row in rows:
             lines.append(f"| {row['method_code']} | {row['pairs']} | {row['true_average_rank_changed']} | {row['unique_top1_changed']} | {row['top_tie_count_changed']} |")
         lines.extend([
             "",
-            "Os três hard negatives preservam o montante verdadeiro. Uma alteração bancária "
-            "modifica igualmente essa componente no verdadeiro e nesses concorrentes. "
-            "A invariância observada depende também desta construção dos candidatos.",
+            "All three hard negatives retain the true amount. A bank-side amount change affects "
+            "this score component equally for the true candidate and these competitors. "
+            "The observed invariance also depends on this candidate construction.",
         ])
     return lines
 
@@ -385,8 +385,8 @@ def create_robustness_figure(summary_csv: str | Path, path: str | Path) -> Path:
             marker="o",
             label=method,
         )
-    axis.set_title("Robustez por cenário — Unique Top-1")
-    axis.set_xlabel("Cenário")
+    axis.set_title("Robustness by scenario - Unique Top-1")
+    axis.set_xlabel("Scenario")
     axis.set_ylabel("Unique Top-1")
     axis.set_xticks(x_values, scenarios)
     axis.set_ylim(0.0, 1.05)
@@ -397,6 +397,62 @@ def create_robustness_figure(summary_csv: str | Path, path: str | Path) -> Path:
     output = _prepare_path(path)
     figure.savefig(output, dpi=180)
     plt.close(figure)
+    return output
+
+
+def create_paper_comparison_figure(summary_csv: str | Path, path: str | Path) -> Path:
+    """Plot M3/M4 scenario means and sample SDs from the completed summary CSV.
+
+    Use a compact single-column layout with categorical rows and distinct marker
+    shapes. Error bars describe variation across seeds, not confidence intervals.
+    """
+    scenario_labels = (
+        "Natural", "Amount", "Date", "Reference",
+        "Entity", "Description", "Missing", "Combined",
+    )
+    lookup = {
+        (row["method_code"], row["scenario_code"]): row
+        for row in _read_csv(summary_csv)
+        if row["method_code"] in {"M3", "M4"} and row["scenario"] != "ALL"
+    }
+    required = {(method, f"P{index}") for method in ("M3", "M4") for index in range(8)}
+    if not required.issubset(lookup):
+        raise ValueError("The paper comparison requires M3 and M4 results for all eight scenarios.")
+
+    with plt.rc_context({"font.size": 8, "legend.fontsize": 8}):
+        figure, axis = plt.subplots(figsize=(3.4, 2.5))
+        for method, offset, marker, color in (
+            ("M3", -0.13, "o", "#0072B2"),
+            ("M4", 0.13, "s", "#D55E00"),
+        ):
+            rows = [lookup[(method, f"P{index}")] for index in range(8)]
+            axis.errorbar(
+                [100 * float(row["unique_top1_mean"]) for row in rows],
+                [index + offset for index in range(8)],
+                xerr=[100 * float(row["unique_top1_std"]) for row in rows],
+                fmt=marker,
+                color=color,
+                markersize=3.2,
+                elinewidth=0.8,
+                capsize=1.8,
+                capthick=0.8,
+                label=method,
+            )
+        axis.set_yticks(range(8), scenario_labels)
+        axis.set_ylim(7.55, -0.55)
+        axis.set_xlim(0, 100)
+        axis.set_xticks((0, 25, 50, 75, 100))
+        axis.set_xlabel("Unique Top-1 (%) · mean ± SD", fontsize=8)
+        axis.tick_params(axis="both", labelsize=8, length=2)
+        axis.grid(axis="x", alpha=0.2, linewidth=0.5)
+        axis.set_axisbelow(True)
+        axis.spines[["top", "right"]].set_visible(False)
+        axis.legend(loc="lower center", bbox_to_anchor=(0.5, 1.01), ncol=2, frameon=False)
+        figure.subplots_adjust(left=0.27, right=0.97, bottom=0.19, top=0.85)
+
+        output = _prepare_path(path)
+        figure.savefig(output, dpi=300)
+        plt.close(figure)
     return output
 
 

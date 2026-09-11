@@ -45,6 +45,6 @@ def read_jsonl(path: str | Path) -> tuple[BenchmarkCase, ...]:
                 continue
             raw = json.loads(stripped)
             if not isinstance(raw, dict):
-                raise ValueError(f"Linha {line_number}: era esperado um objeto JSON.")
+                raise ValueError(f"Line {line_number}: expected a JSON object.")
             cases.append(BenchmarkCase.from_dict(raw))
     return tuple(cases)

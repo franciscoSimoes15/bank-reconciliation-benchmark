@@ -1,1 +1,1 @@
-"""Componentes de normalization do benchmark."""
+"""Benchmark field normalization."""

@@ -1,4 +1,4 @@
-"""Estruturas auxiliares da geração do ledger e dos candidatos."""
+"""Supporting structures for ledger and candidate generation."""
 
 from __future__ import annotations
 

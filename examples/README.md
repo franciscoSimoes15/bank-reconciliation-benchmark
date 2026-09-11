@@ -1,7 +1,7 @@
-# Exemplos de execução
+# Execution examples
 
-- `demo_success.md`: um caso em que `field_aware` produz Unique Top-1, quando existe na amostra.
-- `demo_challenging.md`: o caso com maior true rank entre os oito cenários da amostra; pode conter uma falha ou um empate, sem os fabricar.
-- `demo_benchmark.jsonl`: oito casos, um por cenário, gerados com a development seed `7`.
+- `demo_success.md`: a case where `field_aware` achieves Unique Top-1, when one exists in the sample.
+- `demo_challenging.md`: the case with the largest true rank across the sample's eight scenarios; it may contain a failure or tie, without fabricating either.
+- `demo_benchmark.jsonl`: eight cases, one per scenario, generated using development seed `7`.
 
-Os dois relatórios mostram valores raw, valores normalizados, scores por campo e ranking dos 10 candidatos.
+Both reports show raw values, normalized values, field scores and the ranking of all 10 candidates.

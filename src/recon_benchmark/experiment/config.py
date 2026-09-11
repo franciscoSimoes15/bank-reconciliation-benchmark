@@ -23,7 +23,7 @@ def load_config(path: str | Path | None = None) -> ExperimentConfig:
 
     loaded: object = json.loads(Path(path).read_text(encoding="utf-8"))
     if not isinstance(loaded, Mapping) or not all(isinstance(key, str) for key in loaded):
-        raise ValueError("A configuração tem de ser um objeto JSON.")
+        raise ValueError("The configuration must be a JSON object.")
     raw: Mapping[str, object] = loaded
 
     config = ExperimentConfig(
@@ -68,7 +68,7 @@ def _integer(raw: Mapping[str, object], key: str, default: int) -> int:
 def _integer_value(value: object, key: str) -> int:
     """Require a genuine integer for a setting or an evaluation-seed list item."""
     if not isinstance(value, int) or isinstance(value, bool):
-        raise ValueError(f"{key} tem de ser inteiro.")
+        raise ValueError(f"{key} must be an integer.")
     return value
 
 
@@ -80,7 +80,7 @@ def _decimal(raw: Mapping[str, object], key: str, default: str) -> Decimal:
     """
     value = raw.get(key, default)
     if not isinstance(value, (str, int, float)) or isinstance(value, bool):
-        raise ValueError(f"{key} tem de ser numérico.")
+        raise ValueError(f"{key} must be numeric.")
     return Decimal(str(value))
 
 
@@ -88,7 +88,7 @@ def _float(raw: Mapping[str, object], key: str, default: float) -> float:
     """Read a numeric setting as float without accepting booleans or numeric strings."""
     value = raw.get(key, default)
     if not isinstance(value, (int, float)) or isinstance(value, bool):
-        raise ValueError(f"{key} tem de ser numérico.")
+        raise ValueError(f"{key} must be numeric.")
     return float(value)
 
 
@@ -96,12 +96,12 @@ def _list(raw: Mapping[str, object], key: str, default: list[object]) -> list[ob
     """Read a JSON list or its fallback; element checks belong to the calling loader."""
     value = raw.get(key, default)
     if not isinstance(value, list):
-        raise ValueError(f"{key} tem de ser uma lista.")
+        raise ValueError(f"{key} must be a list.")
     return value
 
 
 def _string_value(value: object, key: str) -> str:
     """Require a textual list item before converting it into a scenario or method enum."""
     if not isinstance(value, str):
-        raise ValueError(f"{key} só pode conter texto.")
+        raise ValueError(f"{key} may contain only text.")
     return value

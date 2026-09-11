@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bank-reconciliation-benchmark"
 version = "0.1.0"
-description = "Benchmark sintético reproduzível para matching 1:1 em reconciliação bancária."
+description = "Reproducible synthetic benchmark for 1:1 bank-reconciliation matching."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "RECPAD benchmark project" }]

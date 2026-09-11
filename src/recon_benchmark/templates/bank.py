@@ -1,4 +1,4 @@
-"""Convenções textuais da fonte bancária."""
+"""Text conventions for the bank source."""
 
 from recon_benchmark.domain.models import OperationType
 

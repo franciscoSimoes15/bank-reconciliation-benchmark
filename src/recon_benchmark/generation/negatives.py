@@ -42,7 +42,7 @@ def select_natural_negatives(
     ]
     if len(eligible) < count:
         raise RuntimeError(
-            f"Ledger insuficiente para {count} natural negatives com disponibilidade {availability}."
+            f"Insufficient ledger entries for {count} natural negatives with availability {availability}."
         )
 
     eligible.sort(key=lambda entry: _retrieval_key(true_entry.record, entry.record))
@@ -147,7 +147,7 @@ def _alternative_entity(
         legal_name, bank_alias = generate_entity_names(rng, start_index + offset)
         if legal_name != event.entity_legal_name:
             return legal_name, bank_alias
-    raise RuntimeError("Não foi possível gerar uma entidade controlada diferente.")
+    raise RuntimeError("Could not generate a distinct controlled entity.")
 
 
 def _render_distinct_record(
@@ -174,7 +174,7 @@ def _render_distinct_record(
     changed_description = f"{record.description} extraordinario"
     changed = replace(record, description=changed_description)
     if _matching_fields(changed) == _matching_fields(true_record):
-        raise RuntimeError("Não foi possível construir um controlled hard negative distinto.")
+        raise RuntimeError("Could not construct a distinct controlled hard negative.")
     return changed
 
 

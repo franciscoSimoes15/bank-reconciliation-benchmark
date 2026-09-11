@@ -43,17 +43,17 @@ def explain_case(
 
     transaction = case.transaction
     lines = [
-        f"# Explicação do caso `{case.case_id}`",
+        f"# Explanation of case `{case.case_id}`",
         "",
         f"- Seed: `{case.seed}`",
-        f"- Cenário: `{case.scenario.value}` ({scenario_code(case.scenario)})",
-        f"- Perturbações: `{', '.join(case.perturbations) if case.perturbations else 'nenhuma'}`",
-        f"- Método: `{method.value}` ({method_code(method)})",
-        f"- Ground truth usado apenas na avaliação: `{case.true_candidate_id}`",
+        f"- Scenario: `{case.scenario.value}` ({scenario_code(case.scenario)})",
+        f"- Perturbations: `{', '.join(case.perturbations) if case.perturbations else 'none'}`",
+        f"- Method: `{method.value}` ({method_code(method)})",
+        f"- Ground truth used only for evaluation: `{case.true_candidate_id}`",
         "",
-        "## Movimento bancário recebido pelo matcher",
+        "## Bank transaction received by the matcher",
         "",
-        "| Campo | Raw | Normalizado |",
+        "| Field | Raw | Normalized |",
         "|---|---|---|",
         f"| Amount | `{transaction.amount}` | `{transaction.amount}` |",
         f"| Date | `{transaction.date.isoformat()}` | `{transaction.date.isoformat()}` |",
@@ -61,9 +61,9 @@ def explain_case(
         f"| Counterparty | `{_display(transaction.counterparty)}` | `{_display(normalize_entity(transaction.counterparty))}` |",
         f"| Description | `{_display(transaction.description)}` | `{_display(normalize_description(transaction.description))}` |",
         "",
-        "## Ranking dos candidatos",
+        "## Candidate ranking",
         "",
-        "| Rank visual | Candidato | True? | Score | Campos | Amount | Date | Reference | Entity | Description | Excluídos |",
+        "| Display rank | Candidate | True? | Score | Fields | Amount | Date | Reference | Entity | Description | Excluded |",
         "|---:|---|:---:|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
 
@@ -75,7 +75,7 @@ def explain_case(
                 [
                     str(index),
                     f"`{entry.candidate.id}`",
-                    "sim" if entry.candidate.id == case.true_candidate_id else "",
+                    "yes" if entry.candidate.id == case.true_candidate_id else "",
                     f"{entry.breakdown.total:.6f}",
                     str(entry.breakdown.compared_field_count),
                     _field_score(scores, "amount"),
@@ -92,11 +92,11 @@ def explain_case(
     lines.extend(
         [
             "",
-            "O score final é a média simples dos campos disponíveis. Um campo ausente em qualquer lado é excluído. "
-            "A geração valida que todos os candidatos do caso são comparados no mesmo número de campos.",
+            "The final score is the unweighted mean of available fields. A field missing on either side is excluded. "
+            "Generation validates that every candidate in the case is compared using the same number of fields.",
             "",
-            "O matcher recebe apenas o movimento bancário e um registo contabilístico. `event_id`, cenário, "
-            "perturbações, origem e ground truth só são consultados depois do scoring.",
+            "The matcher receives only the bank transaction and one accounting record. `event_id`, scenario, "
+            "perturbations, origin and ground truth are consulted only after scoring.",
             "",
         ]
     )

@@ -1,3 +1,3 @@
-"""Benchmark sintético para matching 1:1 em reconciliação bancária."""
+"""Synthetic benchmark for 1:1 bank-reconciliation matching."""
 
 __version__ = "0.1.0"

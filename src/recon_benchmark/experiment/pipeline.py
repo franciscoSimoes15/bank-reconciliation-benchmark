@@ -17,6 +17,7 @@ from recon_benchmark.metrics.evaluation import (
 from recon_benchmark.generation.generator import benchmark_digest, generate_benchmark
 from recon_benchmark.domain.models import BenchmarkCase, MatchingMethod
 from recon_benchmark.metrics.reporting import (
+    create_paper_comparison_figure,
     create_robustness_figure,
     write_aggregate_csv,
     write_manifest,
@@ -39,19 +40,20 @@ def run_experiment(
 
     seeds, cases_per_scenario and methods describe the effective run; config
     supplies shared generation and scoring rules. Each seed produces paired cases.
-    Write per-seed and consolidated JSONL, metrics CSVs, report, figure and manifest
+    Write per-seed and consolidated JSONL, metrics CSVs, report, figures and manifest
     under root, replacing files at the same paths. Return output names mapped to
     paths for the CLI. Configuration and generation failures propagate.
+    Include the paper comparison figure when both M3 and M4 are evaluated.
     """
     config.validate()
     seed_list = list(seeds)
     method_list = list(methods)
     if not seed_list:
-        raise ValueError("É necessária pelo menos uma seed.")
+        raise ValueError("At least one seed is required.")
     if len(seed_list) != len(set(seed_list)):
-        raise ValueError("As seeds da execução não podem estar duplicadas.")
+        raise ValueError("Run seeds must not contain duplicates.")
     if not method_list:
-        raise ValueError("É necessário pelo menos um método.")
+        raise ValueError("At least one method is required.")
 
     root_path = Path(root)
     benchmarks_dir = root_path / "benchmarks"
@@ -117,7 +119,7 @@ def run_experiment(
         path=figures_dir / "robustness_by_scenario.png",
     )
 
-    return {
+    outputs = {
         "benchmark": benchmark_path,
         "per_case": per_case_path,
         "by_scenario": by_scenario_path,
@@ -129,3 +131,9 @@ def run_experiment(
         "manifest": manifest_alias_path,
         "figure": figure_path,
     }
+    if {MatchingMethod.CHARACTER_TRIGRAM_TEXT, MatchingMethod.FIELD_AWARE}.issubset(method_list):
+        outputs["paper_comparison_figure"] = create_paper_comparison_figure(
+            summary_csv=summary_path,
+            path=figures_dir / "method_comparison_by_scenario.png",
+        )
+    return outputs
