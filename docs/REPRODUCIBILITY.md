@@ -25,6 +25,19 @@ The previously added decimal half-up formatting remains in use, including
 
 ## Historical provenance
 
+The paper's English artifact snapshot is
+[`1ec98d3`](https://github.com/franciscoSimoes15/bank-reconciliation-benchmark/tree/1ec98d353fcb94ad0397262cf696ba8fa21afc66),
+generated from clean source `98fce0f752d6d5c5eed8994f655f0603e7c65090`.
+Later housekeeping removes redundant post-hoc copies, a generated wheel, a
+duplicate demo trace, directory placeholders, and a superseded plan from the
+working tree. It does not rewrite the published result files, hashes or manifests.
+The paper can continue to cite its immutable artifact snapshot.
+
+The consolidated `publication_verification.json` covers every comparison and
+artifact hash previously duplicated in `results/posthoc/verification.json`.
+Its references such as `8ee9f98:results/posthoc/operation_diagnostics.csv` point
+to historical Git blobs and remain valid after removing current duplicate files.
+
 Original artifacts remain available in Git history at the frozen revision.
 The original execution manifest is also preserved as
 [`original_execution_manifest.json`](../results/reproduction/9ad7404d/original_execution_manifest.json).
@@ -51,6 +64,12 @@ From the repository root, verify the current English release:
 
 ```powershell
 python scripts/reproduce_frozen.py --revision HEAD --output-root ../english-reproduction
+```
+
+To reproduce the exact artifact snapshot cited in the paper:
+
+```powershell
+python scripts/reproduce_frozen.py --revision 1ec98d353fcb94ad0397262cf696ba8fa21afc66 --output-root ../paper-reproduction
 ```
 
 To reproduce the original frozen baseline, including its historical presentation:

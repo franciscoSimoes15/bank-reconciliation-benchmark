@@ -89,7 +89,9 @@ Create a case explanation:
 python -m recon_benchmark.cli demo --scenario combined_variation --method field_aware
 ```
 
-You can also run `python start_here.py`.
+`demo` creates one scoring trace. Run `python start_here.py` to regenerate the
+curated successful and challenging example reports instead. The `.bat` and `.sh`
+launchers in `scripts/` delegate to these Python entry points.
 
 ## Frozen final run
 
@@ -165,10 +167,10 @@ with examples and links to code and tests. To follow a case from its
 origin, read domain, generation, normalization, ranking and metrics in order.
 
 [Implementation decisions](docs/IMPLEMENTATION_DECISIONS.md) and the component
-guides describe the implemented protocol. The
-[legacy implementation plan](docs/archive/Legacy_Implementation_Plan_RECPAD_2026.docx)
-is retained only as superseded historical documentation; its earlier design
-does not define the current benchmark.
+guides describe the implemented protocol. The superseded implementation plan
+is available only in the
+[historical paper snapshot](https://github.com/franciscoSimoes15/bank-reconciliation-benchmark/blob/1ec98d353fcb94ad0397262cf696ba8fa21afc66/docs/archive/Legacy_Implementation_Plan_RECPAD_2026.docx);
+its earlier design does not define the current benchmark.
 
 | Guide | What it explains |
 |---|---|
@@ -224,7 +226,8 @@ src/recon_benchmark/
   metrics/
     models.py                 CaseEvaluation and AggregateMetrics classes
     evaluation.py             ground truth, average rank and metrics
-    reporting.py              CSV, cross-seed aggregation, report and manifest
+    diagnostics.py            post-hoc operation and paired amount analysis
+    reporting.py              CSV, cross-seed aggregation, report, figures and manifest
 ```
 
 All package directories contain `__init__.py`. The commands `recon-benchmark`,
@@ -258,7 +261,7 @@ that group, M4-D achieves 90.08% and M4 achieves 88.79%.
 
 New runs write `operation_diagnostics.csv` and
 `amount_pair_diagnostics.csv` alongside the existing outputs. The
-[additional report](results/posthoc/report.md) identifies these results as
+[report](results/report.md) identifies these results as
 post-hoc diagnostics. Current reports are regenerated in English; historical
 outputs remain available through Git history and the preserved reproduction
 evidence. Formatting uses explicit decimal rounding, correcting 14.175% to 14.18%.
@@ -271,6 +274,12 @@ python scripts/reproduce_frozen.py --revision HEAD --output-root ../english-repr
 
 See the [reproduction and hashing policy](docs/REPRODUCIBILITY.md), which
 distinguishes exact JSONL equality from LF/CRLF equivalence in CSVs and the report.
+
+The paper's archived result snapshot is
+[`1ec98d3`](https://github.com/franciscoSimoes15/bank-reconciliation-benchmark/tree/1ec98d353fcb94ad0397262cf696ba8fa21afc66).
+Subsequent documentation and file cleanup retain those results and their original
+provenance. Generated package builds and ad-hoc demo traces are not versioned;
+the source installation and curated examples are the maintained entry points.
 
 ## Publication figure
 

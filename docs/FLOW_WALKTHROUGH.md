@@ -67,4 +67,13 @@ Only at this stage does the evaluator consult ground truth.
 
 ## 8. Outputs
 
-The pipeline writes the consolidated benchmark, per-case results, seed/scenario aggregates, cross-seed means and standard deviations, a report, a figure and a manifest containing configuration, environment, commit and hashes.
+The pipeline writes per-seed and consolidated benchmarks, per-case results,
+seed/scenario aggregates, cross-seed means and standard deviations, operation and
+paired amount diagnostics, a report, and a manifest containing configuration,
+environment, commit and hashes. It generates an overview figure for the primary
+methods and, when M3 and M4 are both evaluated, the paper's scenario comparison
+with sample standard deviations. See the [output guide](../src/recon_benchmark/metrics/README.md).
+
+The `demo` command above exercises generation and one scoring explanation. Use
+`run-final --output-root ../fresh-run` for the complete configured experiment;
+the `scripts/run_final.*` shortcuts write into the repository's output folders.

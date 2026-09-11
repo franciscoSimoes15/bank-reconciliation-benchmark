@@ -6,11 +6,17 @@ The project distinguishes three sources:
 
 | Source | Role |
 |---|---|
-| Study of 15 commercial engines | Identify relevant signals, tolerances, noise, ambiguity and workflows. |
+| External domain background | Motivate signals, tolerances, noise, ambiguity and workflows; not part of the public verification evidence. |
 | Scientific literature | Choose public comparator families and metrics. |
 | Project design decisions | Define size, seeds, perturbations, thresholds and hard negatives. |
 
 Commercial products are not used as performance baselines. Many describe functional capabilities without disclosing their formula, weights or internal algorithm.
+
+Earlier project notes refer to a separate study of 15 commercial engines. That
+study is not distributed with this repository and should not be treated as
+independently verifiable evidence for the benchmark's results. The implemented
+protocol is documented in [implementation decisions](IMPLEMENTATION_DECISIONS.md)
+and the component guides.
 
 ## 2. Record linkage
 
@@ -71,7 +77,10 @@ RR = 1 / position of the correct candidate
 MRR = mean of RR values
 ```
 
-The definition follows the TREC/NIST tradition. The project adds **Unique Top-1**, because a top tie in financial reconciliation does not represent an unambiguous automatic decision.
+The reciprocal-rank metric follows the TREC/NIST tradition; using average rank
+within a tie is this benchmark's explicit convention. **Unique Top-1** measures
+whether the correct candidate is alone at the top of the ranking. It does not
+calibrate an automatic-reconciliation decision.
 
 ## 7. Bank reconciliation domain
 

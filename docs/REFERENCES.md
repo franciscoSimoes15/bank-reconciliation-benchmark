@@ -41,4 +41,7 @@
 
 ## Industry evidence
 
-The complete sources and validation details for the 15 commercial engines belong to **Document A — Engine Study**. In this project, that evidence motivates fields, noise scenarios, tolerances, ambiguity and the separation of matching from decision-making; it is not used to compare product performance.
+Earlier project notes refer to **Document A — Engine Study**, a separate survey
+of 15 commercial engines. That document is not included in this repository.
+Its contents are external background, not public reproducibility or validation
+evidence. No commercial product performance is measured by this benchmark.

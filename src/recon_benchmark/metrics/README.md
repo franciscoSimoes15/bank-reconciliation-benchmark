@@ -6,6 +6,7 @@ This layer answers: **where did the true candidate finish, and how ambiguous was
 |---|---|
 | [models.py](models.py) | `CaseEvaluation` for one case/method; `AggregateMetrics` for a seed/method group |
 | [evaluation.py](evaluation.py) | Call the matcher, evaluate truth, handle ties and aggregate within seeds |
+| [diagnostics.py](diagnostics.py) | Describe post-hoc operation strata and paired amount outcomes |
 | [reporting.py](reporting.py) | Aggregate across seeds and write CSVs, report, figures and manifest |
 
 ## From compatibility to an evaluation result
@@ -63,9 +64,13 @@ assert isclose((1 + 0.5 + 2 / 3 + 1 / 3) / 4, 0.625)
 | `per_case.csv` | Scores, true ranks, top-tie counts, compared fields and per-case indicators |
 | `by_scenario.csv` | Metrics for each seed/scenario/method |
 | `summary.csv` | Means and standard deviations across seeds, including `ALL` groups |
-| `report.md` | Readable global results and primary-method scenario comparisons |
+| `operation_diagnostics.csv` | Per-seed and pooled operation breakdowns, including the description ablation |
+| `amount_pair_diagnostics.csv` | Changes in true rank, Unique Top-1 and top-tie size between paired natural/amount cases |
+| `report.md` | Global results, primary-method scenario comparisons and post-hoc diagnostics |
 | `robustness_by_scenario.png` | Mean Unique Top-1 by scenario for the five primary methods |
+| `method_comparison_by_scenario.png` | M3/M4 scenario means and sample standard deviations, when both are evaluated |
 | `experiment_manifest.json` | Configuration, effective run, versions, hashes and available Git state |
+| `manifest.json` | Compatibility alias with identical bytes to `experiment_manifest.json` |
 
 `predicted_candidate_id` is `None` for a top tie. M4-D is included in the metric CSVs and global report, but excluded from the primary-method scenario table and figure. Standard deviations across seeds are not confidence intervals, and synthetic results do not establish production performance.
 
@@ -75,6 +80,10 @@ the eight scenarios. It writes `figures/method_comparison_by_scenario.png` for
 the paper. This figure is an additional view of existing metrics; it does not
 change evaluation or select parameters.
 
-Tests: [test_evaluation.py](../../../tests/test_evaluation.py), [test_pipeline.py](../../../tests/test_pipeline.py).
+The committed `publication_verification.json` and historical files under
+`results/reproduction/` record separate verification runs. They are preserved
+release evidence, not files produced by every `run_experiment()` invocation.
+
+Tests: [test_evaluation.py](../../../tests/test_evaluation.py), [test_pipeline.py](../../../tests/test_pipeline.py), [test_diagnostics.py](../../../tests/test_diagnostics.py).
 
 [Project guide](../../../README.md) · [Experiment configuration](../experiment/README.md)

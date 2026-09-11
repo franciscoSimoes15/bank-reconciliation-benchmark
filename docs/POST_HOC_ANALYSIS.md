@@ -5,10 +5,15 @@ This analysis was added after reviewing the published experiment at
 candidate sets, scores, methods, configuration, and evaluation seeds. No threshold
 or generator decision was selected or changed using these diagnostics.
 
-The current English release regenerates reports and execution manifests in
-`results/` and `benchmarks/`, with the additional analysis also available in
-[`results/posthoc/`](../results/posthoc/). Historical outputs remain available
-through Git history and the [reproduction evidence](REPRODUCIBILITY.md).
+The current English release stores the canonical
+[report](../results/report.md), [operation diagnostics](../results/operation_diagnostics.csv),
+and [paired amount diagnostics](../results/amount_pair_diagnostics.csv) together
+in `results/`. The former `results/posthoc/` copies are redundant and have been
+removed from the current checkout. They remain available in the
+[archived paper snapshot](https://github.com/franciscoSimoes15/bank-reconciliation-benchmark/tree/1ec98d353fcb94ad0397262cf696ba8fa21afc66/results/posthoc).
+The consolidated [publication verification](../results/publication_verification.json)
+retains all primary and diagnostic comparisons; see the
+[reproduction evidence](REPRODUCIBILITY.md) for historical provenance.
 `run-final` writes the diagnostic CSVs alongside its primary outputs and includes
 the breakdown in its report. Use a separate output directory to retain the
 checked-in release artifacts:
